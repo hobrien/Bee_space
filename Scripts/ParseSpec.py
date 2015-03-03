@@ -1,3 +1,5 @@
+#!/usr/local/bin/python
+
 import sys, csv, os, warnings, getopt
 
 import plotly.plotly as py
