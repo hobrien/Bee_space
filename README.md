@@ -8,18 +8,18 @@ Scripts to plot spec data in bee colour space
 Requirements:
 ------------
 
--R http://www.r-project.org)
--ggplot2 (http://ggplot2.org)
--python (https://www.python.org)
--matplotlib (http://matplotlib.org)
--plotly python library (https://plot.ly/python/)
--GCC (https://gcc.gnu.org)
+- [R](http://www.r-project.org)
+- [ggplot2](http://ggplot2.org)
+- [python](https://www.python.org)
+- [matplotlib](http://matplotlib.org)
+- [plotly python library](https://plot.ly/python/)
+- [GCC](https://gcc.gnu.org)
 
 Contents
 --------
--beespace: C program to convert raw spec readings to bee colour space
--Scripts/ParseSpec.py: python script to run beespace and create plots
--Scripts/Hexagon.R: R script to plot results in colour hexagon (used by ParseSpec.py)
+- beespace: C program to convert raw spec readings to bee colour space
+- Scripts/ParseSpec.py: python script to run beespace and create plots
+- Scripts/Hexagon.R: R script to plot results in colour hexagon (used by ParseSpec.py)
 
 Usage
 -----
