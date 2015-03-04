@@ -12,10 +12,11 @@ from pylab import plt, savefig
 from subprocess import call
 
 def main(argv):
-    usage = 'ParseSpec.py -m [hexagon | plotly | rotate] -o outfile data_folders'
+    usage = 'ParseSpec.py -m [hexagon | plotly | rotate | text] -o outfile data_folders'
     mode = 'plotly'
     outfile = ''
     dimensions = '3D'
+    text = 0
     try:
         opts, folders = getopt.getopt(argv,"hm:o:",["help", "mode=", "outfile="])
     except getopt.GetoptError:
@@ -32,6 +33,8 @@ def main(argv):
 
     if mode == 'hexagon':
         dimensions = '2D'
+    elif mode == 'text':
+        dimensions = 'both'
     traces = []
     for folder in folders:
         traces.append(ParseSpec(folder, dimensions))
@@ -42,8 +45,21 @@ def main(argv):
         RotatingPlot(traces, outfile)
     elif mode == 'hexagon':
         Hexagon(traces, outfile)
+    elif mode == 'text':
+        PrintText(traces, outfile)
     else:
         sys.exit("mode %s not recognized. Use '-m plotly', '-m rotate' or '-m hexagon'" % mode)
+
+def PrintText(traces, outfile):
+        file_handle = open(outfile, 'w')
+        file_handle.write("Sample\tBlue\tGreen\tUV\tX\tY\n")
+        for trace in traces:
+            for i in range(len(trace[0])):
+                row = []
+                for column in trace:
+                    row.append(str(column[i]))
+                file_handle.write('\t'.join(row) + '\n')
+        file_handle.close()
 
 def Hexagon(traces, outfile):
     if not outfile:
@@ -52,7 +68,11 @@ def Hexagon(traces, outfile):
     tempfile = open('scatter.txt', 'w')
     for trace in traces:
        for i in range(len(trace['x'])):
-           tempfile.write('\t'.join((trace['name'], str(trace['x'][i]), str(trace['y'][i]))) + '\n')
+           tempfile.write('\t'.join((trace['name'], 
+                                     str(trace['x'][i]), 
+                                     str(trace['y'][i]) 
+                                   )) + '\n'
+                         )
     tempfile.close()
     print os.path.join(os.path.expanduser('~'), "Documents", "R", "Hexagon.R")
     call(["Rscript", os.path.join(os.path.expanduser('~'), 
@@ -120,6 +140,8 @@ def ParseSpec(folder, dimensions):
         uv = []
         x = []
         y = []
+        sample = []
+        sample_id = os.path.basename(folder.strip("/"))
         for row in reader:
             try:
                 (file, avx, avx_val, avy, avy_val, avb, avb_val, avg, avg_val, avuv, avuv_val, intx, 
@@ -133,11 +155,14 @@ def ParseSpec(folder, dimensions):
             b.append(float(avb_val))
             g.append(float(avg_val))
             uv.append(float(avuv_val))
+            sample.append(sample_id)
     os.chdir(starting_dir)
     if dimensions == '3D':
-        return Scatter3d(x=b, y=g, z=uv, mode='markers', name=os.path.basename(folder))
+        return Scatter3d(x=b, y=g, z=uv, mode='markers', name=sample_id)
+    elif dimensions == '2D':
+        return Scatter(x=x, y=y, mode='markers', name=sample_id)
     else:
-        return Scatter(x=x, y=y, mode='markers', name=os.path.basename(folder))
+        return (sample, b, g, uv, x, y)
         
 def Plotly(traces):
     py.sign_in('heath.obrien', 'bxr8tju4kv')
