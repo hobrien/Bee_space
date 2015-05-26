@@ -13,17 +13,24 @@ Requirements:
 - [python](https://www.python.org)
 - [matplotlib](http://matplotlib.org)
 - [plotly python library](https://plot.ly/python/)
-- [GCC](https://gcc.gnu.org)
 
 Contents
 --------
-- beespace: C program to convert raw spec readings to bee colour space
-- Scripts/ParseSpec.py: python script to run beespace and create plots
+- Scripts/ParseSpec.py: python script to convert spec reading to BeeSpace and create plots
 - Scripts/Hexagon.R: R script to plot results in colour hexagon (used by ParseSpec.py)
+- Data/BeeSensitivity.txt: Sensitivity values for each receptor in bee eyes
+- Data/Background.txt: Spec values for Daylight and for background reflectance off leaves
 
 Usage
 -----
 python Scripts/ParseSpec.py -m [hexagon | plotly | rotate] -o outfile data_folders
 
-Runs beespace on all '.CSV' files in each folder than uses the data to draw the specified
-plot, using the folder names as sample names
+Runs beespace on all '.CSV' or '.txt' files in each folder than uses the data to draw the 
+specified plot, using the folder names as sample names (can also use files with multiple
+columns rather than folders with multiple files)
+
+
+Todo
+----
+- add unit tests for main functions in ParseSpec.py
+- convert hexagon plotting to matplotlib so I can remove ggplot/R dependency
