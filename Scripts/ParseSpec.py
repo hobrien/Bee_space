@@ -15,14 +15,22 @@ from pylab import plt, savefig
 from subprocess import call
 
 def main(argv):
-    usage = """"ParseSpec.py -m [hexagon | plotly | rotate | text] -o outfile data_folders\n
-    Wavelengths must be in first column. Spec readings must be in all other columns\n"""
+    usage = """"ParseSpec.py -m (hexagon | plotly | rotate | text) -o outfile data_folders\n
+    Wavelengths must be in first column. Spec readings must be in all other columns\n
+    Custom spec readings for Bee Sensitivity and Background Reflectance can be specified with
+    the -s and -b flags respectively\n"""
+    
     mode = ''
     outfile = ''
     dimensions = '3D'
     text = 0
+    #There's got to be an easier way to specify these folders in a portable way, but this works
+    global BeeSensitivityFileName
+    BeeSensitivityFileName = os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'BeeSensitivity.txt')
+    global BackgroundFileName
+    BackgroundFileName = os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'Background.txt')
     try:
-        opts, folders = getopt.getopt(argv,"hm:o:",["help", "mode=", "outfile="])
+        opts, folders = getopt.getopt(argv[1:],"hm:o:b:s:",["help", "mode=", "outfile="])
     except getopt.GetoptError:
         print usage
         sys.exit(2)
@@ -34,6 +42,10 @@ def main(argv):
             mode = arg
         elif opt in ("-o", "--outfile"):
             outfile = arg
+        elif opt in ("-b", "--background"):
+            BackgroundFileName = arg
+        elif opt in ("-s", "--sensitivity"):
+            BeeSensitivityFileName = arg
 
     if mode == 'hexagon':
         dimensions = '2D'
@@ -137,8 +149,8 @@ def RotatingPlot(traces, outfile):
                 
 def ParseSpec(folder, dimensions):
     starting_dir = os.getcwd()
-    BeeSensitivity = pd.DataFrame.from_csv(os.path.join(os.path.expanduser("~"), "Desktop", "BeeSensitivity.txt"), sep='\t', index_col=False)
-    Background = pd.DataFrame.from_csv(os.path.join(os.path.expanduser("~"), "Desktop", "Background.txt"), sep='\t', index_col=False)
+    BeeSensitivity = GetIntervals(pd.DataFrame.from_csv(BeeSensitivityFileName, sep='\t', index_col=False))
+    Background = GetIntervals(pd.DataFrame.from_csv(BackgroundFileName, sep='\t', index_col=False))
     b = []
     g = []
     uv = []
@@ -240,5 +252,4 @@ def GetIntervals(SpecData, Interval=5):
     return SpecData[(SpecData['Wavelength'] >= 300) & (SpecData['Wavelength'] <= 700)].reset_index(drop=True)
             
 if __name__ == "__main__":
-   verbose = 0
-   main(sys.argv[1:])
+   main(sys.argv)
