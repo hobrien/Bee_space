@@ -150,15 +150,16 @@ def ParseSpec(folder, dimensions):
         files.append(folder)            
     for file in files:        
             SpecData = pd.DataFrame.from_csv(file, sep='\t', index_col=False)
-            ReducedSpec = GetIntervals(SpecData)[(SpecData.Wavelength >= 300) & (SpecData.Wavelength <= 700)].reset_index(drop=True)
-            assert len(ReducedSpec.index) == 81, "Spec dataset only has %i rows. Are all values from 300-700 included" % len(ReducedSpec.index)
-            Colours = GetColours(BeeSensitivity, Background, ReducedSpec)
-            uv.append(Colours[0])
-            b.append(Colours[1])
-            g.append(Colours[2])
-            x.append(Colours[3])
-            y.append(Colours[4])
-            sample.append(sample_id)
+            ReducedSpec = GetIntervals(SpecData)
+            assert len(ReducedSpec.index) == 81, "Spec dataset only has %i rows. Are all values from 300-700 included?" % len(ReducedSpec.index)
+            for i in range(len(ReducedSpec.columns) -1):
+                Colours = GetColours(BeeSensitivity, Background, ReducedSpec.drop(ReducedSpec.columns[1:1+i] | ReducedSpec.columns[2+i:], 1))
+                uv.append(Colours[0])
+                b.append(Colours[1])
+                g.append(Colours[2])
+                x.append(Colours[3])
+                y.append(Colours[4])
+                sample.append(sample_id)
     os.chdir(starting_dir)
     if dimensions == '3D':
         return Scatter3d(x=b, y=g, z=uv, mode='markers', name=sample_id)
@@ -206,6 +207,7 @@ def Plotly(traces):
 
 def GetColours(BeeSensitivity, Background, SpecData):
     #This will do most of the work of converting a spec reading into values to plot on a 3d plot or hexagon
+    SpecData.rename(columns={SpecData.columns[1]:'Reflectance'}, inplace=True)
     Combined = pd.merge(pd.merge(BeeSensitivity, Background, on='Wavelength'), SpecData, on='Wavelength')
     U_B_G_Y_X = []
     for colour in ('UV', 'Blue', 'Green'):
@@ -215,22 +217,22 @@ def GetColours(BeeSensitivity, Background, SpecData):
     U_B_G_Y_X.append(U_B_G_Y_X[1]-0.5*(U_B_G_Y_X[0]+U_B_G_Y_X[2]))
     U_B_G_Y_X.append(0.866*(U_B_G_Y_X[2]-U_B_G_Y_X[0]))
     return U_B_G_Y_X
-
+    
 def GetIntervals(SpecData, Interval=5):
     #select wavelengths closest to multiples of interval and round
-    Wavelength = SpecData.columns[0]
-    SpecData= SpecData.sort(columns=Wavelength)
-    LastSaved = SpecData[Wavelength].tolist()[-1]+Interval
-    for x in reversed(range(1, len(SpecData[Wavelength]))):
-        current_dist =  min(SpecData[Wavelength][x] % Interval, Interval- SpecData[Wavelength][x] % Interval)
-        next_dist =  min(SpecData[Wavelength][x-1] % Interval, Interval- SpecData[Wavelength][x-1] % Interval)
-        if next_dist < current_dist or LastSaved - SpecData[Wavelength][x] < Interval/2.0:
+    SpecData.rename(columns={SpecData.columns[0]:'Wavelength'}, inplace=True)
+    SpecData= SpecData.sort(columns='Wavelength')
+    LastSaved = SpecData['Wavelength'].tolist()[-1]+Interval
+    for x in reversed(range(1, len(SpecData['Wavelength']))):
+        current_dist =  min(SpecData['Wavelength'][x] % Interval, Interval- SpecData['Wavelength'][x] % Interval)
+        next_dist =  min(SpecData['Wavelength'][x-1] % Interval, Interval- SpecData['Wavelength'][x-1] % Interval)
+        if next_dist < current_dist or LastSaved - SpecData['Wavelength'][x] < Interval/2.0:
             SpecData=SpecData.drop(SpecData.index[x])
         else:
-            LastSaved = SpecData[Wavelength][x]
-            SpecData[Wavelength][x] = int(Interval * round(float(SpecData[Wavelength][x])/Interval))
-    return SpecData
-        
+            LastSaved = SpecData['Wavelength'][x]
+            SpecData['Wavelength'][x] = int(Interval * round(float(SpecData['Wavelength'][x])/Interval))
+    return SpecData[(SpecData['Wavelength'] >= 300) & (SpecData['Wavelength'] <= 700)].reset_index(drop=True)
+            
 if __name__ == "__main__":
    verbose = 0
    main(sys.argv[1:])
