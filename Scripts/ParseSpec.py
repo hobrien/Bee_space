@@ -150,7 +150,9 @@ def RotatingPlot(traces, outfile):
 def ParseSpec(folder, dimensions):
     starting_dir = os.getcwd()
     BeeSensitivity = GetIntervals(pd.DataFrame.from_csv(BeeSensitivityFileName, sep='\t', index_col=False))
+    assert len(BeeSensitivity.index) == 81, "Bee Sensitivity dataset only has %i rows. Are all values from 300-700 included?" % len(BeeSensitivity.index)
     Background = GetIntervals(pd.DataFrame.from_csv(BackgroundFileName, sep='\t', index_col=False))
+    assert len(Background.index) == 81, "Background dataset only has %i rows. Are all values from 300-700 included?" % len(Background.index)
     b = []
     g = []
     uv = []
