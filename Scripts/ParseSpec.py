@@ -250,7 +250,7 @@ def GetIntervals(SpecData, Interval=5):
             SpecData=SpecData.drop(SpecData.index[x])
         else:
             LastSaved = SpecData['Wavelength'][x]
-            SpecData['Wavelength'][x] = int(Interval * round(float(SpecData['Wavelength'][x])/Interval))
+            SpecData.loc[x:x,'Wavelength'] = int(Interval * round(float(SpecData['Wavelength'][x])/Interval))
     return SpecData[(SpecData['Wavelength'] >= 300) & (SpecData['Wavelength'] <= 700)].reset_index(drop=True)
             
 if __name__ == "__main__":
