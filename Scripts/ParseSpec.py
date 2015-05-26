@@ -4,6 +4,9 @@ import sys, csv, os, warnings, getopt
 
 import plotly.plotly as py
 from plotly.graph_objs import *
+import pandas as pd
+import numpy as np
+
 
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
@@ -90,7 +93,7 @@ def RotatingPlot(traces, outfile):
     if not outfile:
         outfile = 'scatter.gif'
         
-    colours = ['b', 'g', 'r', 'c', 'm', 'y']
+    colours = ['b', 'y', 'r', 'c', 'm', 'g']
     if len(traces) > len(colours):
         sys.exit("not enough colours available for plotting")
     fig = plt.figure()
@@ -123,39 +126,32 @@ def RotatingPlot(traces, outfile):
             i += 360
         savefig("scatter_%03d.png" % i)
     call(["convert", "-delay", "10", "-loop", "0", "scatter_*.png", outfile])
-    call(["rm scatter_*.png"], shell=True)
+    #call(["rm scatter_*.png"], shell=True)
 
                 
 def ParseSpec(folder, dimensions):
     starting_dir = os.getcwd()
     os.chdir(folder)
-    if not os.path.isfile('outputfile.csv'):
-        for file in os.listdir(os.getcwd()):
-            if '.CSV' in file:
-                call(['beespace', file])
-    with open('outputfile.csv', 'rU') as f:
-        reader=csv.reader(f,delimiter=',')
-        b = []
-        g = []
-        uv = []
-        x = []
-        y = []
-        sample = []
-        sample_id = os.path.basename(folder.strip("/"))
-        for row in reader:
-            try:
-                (file, avx, avx_val, avy, avy_val, avb, avb_val, avg, avg_val, avuv, avuv_val, intx, 
-                 intx_val, inty, inty_val, intb, intb_val, intg, intg_val, intuv, intuv_val) = row
-            except ValueError:
-                warnings.warn("wrong number of values")
-                continue
-            assert avx == 'avx' and avy == 'avy' and avb == 'avb' and avg == 'avg' and avuv == 'avuv'
-            x.append(float(avx_val))
-            y.append(float(avy_val))
-            b.append(float(avb_val))
-            g.append(float(avg_val))
-            uv.append(float(avuv_val))
-            sample.append(sample_id)
+    BeeSensitivity = pd.DataFrame.from_csv("../../Desktop/BeeSensitivity.txt", sep='\t', index_col=False)
+    Background = pd.DataFrame.from_csv("../../Desktop/Background.txt", sep='\t', index_col=False)
+    b = []
+    g = []
+    uv = []
+    x = []
+    y = []
+    sample = []
+    sample_id = os.path.basename(folder.strip("/"))
+    for file in os.listdir(os.getcwd()):
+        if '.CSV' in file or '.csv' in file:
+                SpecData = pd.DataFrame.from_csv(file, sep='\t', index_col=False)
+                ReducedSpec = GetIntervals(SpecData)[(SpecData.Wavelength >= 300) & (SpecData.Wavelength <= 700)].reset_index(drop=True)
+                Colours = GetColours(BeeSensitivity, Background, ReducedSpec)
+                uv.append(Colours[0])
+                b.append(Colours[1])
+                g.append(Colours[2])
+                x.append(Colours[3])
+                y.append(Colours[4])
+                sample.append(sample_id)
     os.chdir(starting_dir)
     if dimensions == '3D':
         return Scatter3d(x=b, y=g, z=uv, mode='markers', name=sample_id)
@@ -201,6 +197,32 @@ def Plotly(traces):
     fig = Figure(data=Data(traces), layout=layout)
     plot_url = py.plot(fig)
 
+def GetColours(BeeSensitivity, Background, SpecData):
+    #This will do most of the work of converting a spec reading into values to plot on a 3d plot or hexagon
+    Combined = pd.merge(pd.merge(BeeSensitivity, Background, on='Wavelength'), SpecData, on='Wavelength')
+    U_B_G_Y_X = []
+    for colour in ('UV', 'Blue', 'Green'):
+        R = 1/sum(Combined[colour]*Combined['Daylight']*Combined['Leaves'])
+        raw = sum(Combined[colour]*Combined['Daylight']*Combined['Reflectance'])
+        U_B_G_Y_X.append(raw*R/(raw*R+1))
+    U_B_G_Y_X.append(U_B_G_Y_X[1]-0.5*(U_B_G_Y_X[0]+U_B_G_Y_X[2]))
+    U_B_G_Y_X.append(0.866*(U_B_G_Y_X[2]-U_B_G_Y_X[0]))
+    return U_B_G_Y_X
+
+def GetIntervals(SpecData, Interval=5):
+    #select wavelengths closest to multiples of interval and round
+    SpecData= SpecData.sort(columns='Wavelength')
+    LastSaved = SpecData['Wavelength'].tolist()[-1]+Interval
+    for x in reversed(range(1, len(SpecData['Wavelength']))):
+        current_dist =  min(SpecData['Wavelength'][x] % Interval, Interval- SpecData['Wavelength'][x] % Interval)
+        next_dist =  min(SpecData['Wavelength'][x-1] % Interval, Interval- SpecData['Wavelength'][x-1] % Interval)
+        if next_dist < current_dist or LastSaved - SpecData['Wavelength'][x] < Interval/2.0:
+            SpecData=SpecData.drop(SpecData.index[x])
+        else:
+            LastSaved = SpecData['Wavelength'][x]
+            SpecData['Wavelength'][x] = int(Interval * round(float(SpecData['Wavelength'][x])/Interval))
+    return SpecData
+    
 if __name__ == "__main__":
    verbose = 0
    main(sys.argv[1:])
