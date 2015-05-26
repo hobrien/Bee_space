@@ -218,18 +218,19 @@ def GetColours(BeeSensitivity, Background, SpecData):
 
 def GetIntervals(SpecData, Interval=5):
     #select wavelengths closest to multiples of interval and round
-    SpecData= SpecData.sort(columns='Wavelength')
-    LastSaved = SpecData['Wavelength'].tolist()[-1]+Interval
-    for x in reversed(range(1, len(SpecData['Wavelength']))):
-        current_dist =  min(SpecData['Wavelength'][x] % Interval, Interval- SpecData['Wavelength'][x] % Interval)
-        next_dist =  min(SpecData['Wavelength'][x-1] % Interval, Interval- SpecData['Wavelength'][x-1] % Interval)
-        if next_dist < current_dist or LastSaved - SpecData['Wavelength'][x] < Interval/2.0:
+    Wavelength = SpecData.columns[0]
+    SpecData= SpecData.sort(columns=Wavelength)
+    LastSaved = SpecData[Wavelength].tolist()[-1]+Interval
+    for x in reversed(range(1, len(SpecData[Wavelength]))):
+        current_dist =  min(SpecData[Wavelength][x] % Interval, Interval- SpecData[Wavelength][x] % Interval)
+        next_dist =  min(SpecData[Wavelength][x-1] % Interval, Interval- SpecData[Wavelength][x-1] % Interval)
+        if next_dist < current_dist or LastSaved - SpecData[Wavelength][x] < Interval/2.0:
             SpecData=SpecData.drop(SpecData.index[x])
         else:
-            LastSaved = SpecData['Wavelength'][x]
-            SpecData['Wavelength'][x] = int(Interval * round(float(SpecData['Wavelength'][x])/Interval))
+            LastSaved = SpecData[Wavelength][x]
+            SpecData[Wavelength][x] = int(Interval * round(float(SpecData[Wavelength][x])/Interval))
     return SpecData
-    
+        
 if __name__ == "__main__":
    verbose = 0
    main(sys.argv[1:])
