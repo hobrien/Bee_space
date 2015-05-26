@@ -131,27 +131,33 @@ def RotatingPlot(traces, outfile):
                 
 def ParseSpec(folder, dimensions):
     starting_dir = os.getcwd()
-    os.chdir(folder)
-    BeeSensitivity = pd.DataFrame.from_csv("../../Desktop/BeeSensitivity.txt", sep='\t', index_col=False)
-    Background = pd.DataFrame.from_csv("../../Desktop/Background.txt", sep='\t', index_col=False)
+    BeeSensitivity = pd.DataFrame.from_csv(os.path.join(os.path.expanduser("~"), "Desktop", "BeeSensitivity.txt"), sep='\t', index_col=False)
+    Background = pd.DataFrame.from_csv(os.path.join(os.path.expanduser("~"), "Desktop", "Background.txt"), sep='\t', index_col=False)
     b = []
     g = []
     uv = []
     x = []
     y = []
     sample = []
+    files = []
     sample_id = os.path.basename(folder.strip("/"))
-    for file in os.listdir(os.getcwd()):
-        if '.CSV' in file or '.csv' in file:
-                SpecData = pd.DataFrame.from_csv(file, sep='\t', index_col=False)
-                ReducedSpec = GetIntervals(SpecData)[(SpecData.Wavelength >= 300) & (SpecData.Wavelength <= 700)].reset_index(drop=True)
-                Colours = GetColours(BeeSensitivity, Background, ReducedSpec)
-                uv.append(Colours[0])
-                b.append(Colours[1])
-                g.append(Colours[2])
-                x.append(Colours[3])
-                y.append(Colours[4])
-                sample.append(sample_id)
+    if os.path.isdir(folder):
+        os.chdir(folder)
+        for file in os.listdir(os.getcwd()):
+            if '.CSV' in file or '.csv' in file or '.TXT' in file or '.txt' in file:
+                files.append(file)
+    elif os.path.isfile(folder):
+        files.append(folder)            
+    for file in files:        
+            SpecData = pd.DataFrame.from_csv(file, sep='\t', index_col=False)
+            ReducedSpec = GetIntervals(SpecData)[(SpecData.Wavelength >= 300) & (SpecData.Wavelength <= 700)].reset_index(drop=True)
+            Colours = GetColours(BeeSensitivity, Background, ReducedSpec)
+            uv.append(Colours[0])
+            b.append(Colours[1])
+            g.append(Colours[2])
+            x.append(Colours[3])
+            y.append(Colours[4])
+            sample.append(sample_id)
     os.chdir(starting_dir)
     if dimensions == '3D':
         return Scatter3d(x=b, y=g, z=uv, mode='markers', name=sample_id)
