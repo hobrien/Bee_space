@@ -15,8 +15,9 @@ from pylab import plt, savefig
 from subprocess import call
 
 def main(argv):
-    usage = 'ParseSpec.py -m [hexagon | plotly | rotate | text] -o outfile data_folders'
-    mode = 'plotly'
+    usage = """"ParseSpec.py -m [hexagon | plotly | rotate | text] -o outfile data_folders\n
+    Wavelengths must be in first column. Spec readings must be in all other columns\n"""
+    mode = ''
     outfile = ''
     dimensions = '3D'
     text = 0
@@ -41,6 +42,11 @@ def main(argv):
     traces = []
     for folder in folders:
         traces.append(ParseSpec(folder, dimensions))
+    if len(traces) == 0:
+        sys.exit(usage)
+
+    if not outfile and mode != 'plotly':
+        sys.exit("Please specify outfile name\n\n" + usage)
     
     if mode == 'plotly':
         Plotly(traces)
