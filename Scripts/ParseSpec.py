@@ -151,6 +151,7 @@ def ParseSpec(folder, dimensions):
     for file in files:        
             SpecData = pd.DataFrame.from_csv(file, sep='\t', index_col=False)
             ReducedSpec = GetIntervals(SpecData)[(SpecData.Wavelength >= 300) & (SpecData.Wavelength <= 700)].reset_index(drop=True)
+            assert len(ReducedSpec.index) == 81, "Spec dataset only has %i rows. Are all values from 300-700 included" % len(ReducedSpec.index)
             Colours = GetColours(BeeSensitivity, Background, ReducedSpec)
             uv.append(Colours[0])
             b.append(Colours[1])
