@@ -29,6 +29,17 @@ Runs beespace on all '.CSV' or '.txt' files in each folder than uses the data to
 specified plot, using the folder names as sample names (can also use files with multiple
 columns rather than folders with multiple files)
 
+Installing on Windows
+---------------------
+- Download and install the [Anaconda](http://continuum.io/downloads) package for scientific python
+- Install plotly python library:
+  - open Anaconda Command Prompt
+  - type conda install -c https://conda.binstar.org/plotly plotly
+- Install Via GitHub:
+  - Download and install the [GitHub](https://windows.github.com/) app
+  - launch GitHub shell and type "git clone https://github.com/hobrien/Bee_space"
+  - open Command Prompt, then type "python Desktop\GitHub\Bee_space\Test\test_ParseSpec.py"
+  
 
 Todo
 ----

@@ -25,9 +25,7 @@ def main(argv):
     dimensions = '3D'
     text = 0
     #There's got to be an easier way to specify these folders in a portable way, but this works
-    global BeeSensitivityFileName
     BeeSensitivityFileName = os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'BeeSensitivity.txt')
-    global BackgroundFileName
     BackgroundFileName = os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'Background.txt')
     try:
         opts, folders = getopt.getopt(argv[1:],"hm:o:b:s:",["help", "mode=", "outfile="])
@@ -47,13 +45,18 @@ def main(argv):
         elif opt in ("-s", "--sensitivity"):
             BeeSensitivityFileName = arg
 
+    BeeSensitivity = GetIntervals(pd.DataFrame.from_csv(BeeSensitivityFileName, sep='\t', index_col=False))
+    assert len(BeeSensitivity.index) == 81, "Bee Sensitivity dataset only has %i rows. Are all values from 300-700 included?" % len(BeeSensitivity.index)
+    Background = GetIntervals(pd.DataFrame.from_csv(BackgroundFileName, sep='\t', index_col=False))
+    assert len(Background.index) == 81, "Background dataset only has %i rows. Are all values from 300-700 included?" % len(Background.index)
+
     if mode == 'hexagon':
         dimensions = '2D'
     elif mode == 'text':
         dimensions = 'both'
     traces = []
     for folder in folders:
-        traces.append(ParseSpec(folder, dimensions))
+        traces.append(ParseSpec(BeeSensitivity, Background, folder, dimensions))
     if len(traces) == 0:
         sys.exit(usage)
 
@@ -147,12 +150,8 @@ def RotatingPlot(traces, outfile):
     #call(["rm scatter_*.png"], shell=True)
 
                 
-def ParseSpec(folder, dimensions):
+def ParseSpec(BeeSensitivity, Background, folder, dimensions):
     starting_dir = os.getcwd()
-    BeeSensitivity = GetIntervals(pd.DataFrame.from_csv(BeeSensitivityFileName, sep='\t', index_col=False))
-    assert len(BeeSensitivity.index) == 81, "Bee Sensitivity dataset only has %i rows. Are all values from 300-700 included?" % len(BeeSensitivity.index)
-    Background = GetIntervals(pd.DataFrame.from_csv(BackgroundFileName, sep='\t', index_col=False))
-    assert len(Background.index) == 81, "Background dataset only has %i rows. Are all values from 300-700 included?" % len(Background.index)
     b = []
     g = []
     uv = []
@@ -222,7 +221,7 @@ def Plotly(traces):
             cameraposition=[[0.6702282428741455, 0.49358895421028137, -0.5526835918426514, 0.041290637105703354], [0, 0, 0], 2.8476730120752833]
         )
     )
-    fig = Figure(data=Data(traces), layout=layout)
+    fig = Figure(data=traces)
     plot_url = py.plot(fig)
 
 def GetColours(BeeSensitivity, Background, SpecData):
