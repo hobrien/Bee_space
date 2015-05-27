@@ -60,9 +60,6 @@ def main(argv):
     if len(traces) == 0:
         sys.exit(usage)
 
-    if not outfile and mode != 'plotly':
-        sys.exit("Please specify outfile name\n\n" + usage)
-    
     if mode == 'plotly':
         Plotly(traces)
     elif mode == 'rotate':
@@ -75,15 +72,17 @@ def main(argv):
         sys.exit("mode %s not recognized. Use '-m plotly', '-m rotate' or '-m hexagon'" % mode)
 
 def PrintText(traces, outfile):
-        file_handle = open(outfile, 'w')
-        file_handle.write("Sample\tBlue\tGreen\tUV\tX\tY\n")
-        for trace in traces:
+   if not outfile:
+       outfile = 'scatter.txt'
+   file_handle = open(outfile, 'w')
+   file_handle.write("Sample\tBlue\tGreen\tUV\tX\tY\n")
+   for trace in traces:
             for i in range(len(trace[0])):
                 row = []
                 for column in trace:
                     row.append(str(column[i]))
                 file_handle.write('\t'.join(row) + '\n')
-        file_handle.close()
+   file_handle.close()
 
 def Hexagon(traces, outfile):
     if not outfile:
