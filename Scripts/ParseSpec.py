@@ -17,6 +17,7 @@ from subprocess import call
 def main(argv):
     usage = """"ParseSpec.py -m (hexagon | plotly | rotate | text) -o outfile data_folders\n
     Wavelengths must be in first column. Spec readings must be in all other columns\n
+    By default, sample names are read from file name. To use column headers as sample names, use the -c option
     Custom spec readings for Bee Sensitivity and Background Reflectance can be specified with
     the -s and -b flags respectively\n"""
     
@@ -24,11 +25,12 @@ def main(argv):
     outfile = ''
     dimensions = '3D'
     text = 0
+    column_headers = 0
     #There's got to be an easier way to specify these folders in a portable way, but this works
     BeeSensitivityFileName = os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'BeeSensitivity.txt')
     BackgroundFileName = os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'Background.txt')
     try:
-        opts, folders = getopt.getopt(argv[1:],"hm:o:b:s:",["help", "mode=", "outfile="])
+        opts, folders = getopt.getopt(argv[1:],"hcm:o:b:s:",["help", "columns", "mode=", "outfile=", "background'", "sensitivity="])
     except getopt.GetoptError:
         print usage
         sys.exit(2)
@@ -36,6 +38,8 @@ def main(argv):
         if opt in ('-h', '--help'):
             print usage
             sys.exit()
+        elif opt in ("-c", "--columns"):
+            column_headers = 1
         elif opt in ("-m", "--mode"):
             mode = arg
         elif opt in ("-o", "--outfile"):
@@ -56,7 +60,7 @@ def main(argv):
         dimensions = 'both'
     traces = []
     for folder in folders:
-        traces.append(ParseSpec(BeeSensitivity, Background, folder, dimensions))
+        traces.append(ParseSpec(BeeSensitivity, Background, folder, dimensions, column_headers))
     if len(traces) == 0:
         sys.exit(usage)
 
@@ -162,7 +166,7 @@ def RotatingPlot(traces, outfile):
     #call(["rm scatter_*.png"], shell=True)
 
                 
-def ParseSpec(BeeSensitivity, Background, folder, dimensions):
+def ParseSpec(BeeSensitivity, Background, folder, dimensions, column_headers):
     starting_dir = os.getcwd()
     b = []
     g = []
@@ -172,6 +176,7 @@ def ParseSpec(BeeSensitivity, Background, folder, dimensions):
     sample = []
     files = []
     sample_id = os.path.basename(folder.strip("/"))
+    sample_id = os.path.splitext(sample_id)[0]
     if os.path.isdir(folder):
         os.chdir(folder)
         for file in os.listdir(os.getcwd()):
@@ -184,6 +189,8 @@ def ParseSpec(BeeSensitivity, Background, folder, dimensions):
             ReducedSpec = GetIntervals(SpecData)
             assert len(ReducedSpec.index) == 81, "Spec dataset only has %i rows. Are all values from 300-700 included?" % len(ReducedSpec.index)
             for i in range(len(ReducedSpec.columns) -1):
+                if column_headers:
+                    sample_id = ReducedSpec.columns[1+i]
                 Colours = GetColours(BeeSensitivity, Background, ReducedSpec.drop(ReducedSpec.columns[1:1+i] | ReducedSpec.columns[2+i:], 1))
                 uv.append(Colours[0])
                 b.append(Colours[1])
