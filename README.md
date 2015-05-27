@@ -8,11 +8,10 @@ Scripts to plot spec data in bee colour space
 Requirements:
 ------------
 
-- [R](http://www.r-project.org)
-- [ggplot2](http://ggplot2.org)
 - [python](https://www.python.org)
-- [matplotlib](http://matplotlib.org)
+- [Anaconda](http://continuum.io/downloads) Scientific python package
 - [plotly python library](https://plot.ly/python/)
+- [ImageMagick](http://www.imagemagick.org/script/index.php)
 
 Contents
 --------
@@ -35,13 +34,10 @@ Installing on Windows
 - Install plotly python library:
   - open Anaconda Command Prompt
   - type conda install -c https://conda.binstar.org/plotly plotly
+  - follow [these instructions](https://plot.ly/python/getting-started/) to set up plotly API credentials
+  
 - Install Via GitHub:
   - Download and install the [GitHub](https://windows.github.com/) app
   - launch GitHub shell and type "git clone https://github.com/hobrien/Bee_space"
   - open Command Prompt, then type "python Desktop\GitHub\Bee_space\Test\test_ParseSpec.py"
   
-
-Todo
-----
-- add unit tests for main functions in ParseSpec.py
-- convert hexagon plotting to matplotlib so I can remove ggplot/R dependency

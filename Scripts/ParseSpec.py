@@ -7,7 +7,7 @@ from plotly.graph_objs import *
 import pandas as pd
 import numpy as np
 
-
+from matplotlib import collections  as mc
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from pylab import plt, savefig
@@ -88,26 +88,39 @@ def PrintText(traces, outfile):
 def Hexagon(traces, outfile):
     if not outfile:
         outfile = 'scatter.png'
-
-    tempfile = open('scatter.txt', 'w')
+    colours = ['b', 'y', 'r', 'c', 'm', 'g']
+    fig, ax = plt.subplots()
+    legend_points = []
+    legend_titles = []
     for trace in traces:
-       for i in range(len(trace['x'])):
-           tempfile.write('\t'.join((trace['name'], 
-                                     str(trace['x'][i]), 
-                                     str(trace['y'][i]) 
-                                   )) + '\n'
-                         )
-    tempfile.close()
-    print os.path.join(os.path.expanduser('~'), "Documents", "R", "Hexagon.R")
-    call(["Rscript", os.path.join(os.path.expanduser('~'), 
-                                  "Documents", 
-                                  "src", 
-                                  "Bee_space",
-                                  "Scripts",
-                                  "Hexagon.R"
-                                 ), 
-                                 "scatter.txt", outfile])
-    call(['rm', "scatter.txt"])
+        colour = colours.pop(0)
+        ax.scatter(list(trace['y']), list(trace['x']), c=colour, marker='o')
+        legend_points.append(plt.Line2D([0],[0], linestyle="none", c=colour, marker = 'o'))
+        legend_titles.append(trace['name'])
+    #ax.set_xlabel('UV')
+    #ax.set_ylabel('Green')
+    ax.legend(legend_points, 
+              legend_titles, 
+              numpoints = 1, 
+              ncol=3,
+              columnspacing=1,
+              loc=9,
+              frameon=0,
+              borderpad=0,
+              handlelength=0
+            )
+    lines = [[(0, 1), (-.866, .5)], 
+         [(0, -1), (-.866, -.5)],
+         [(0, 1), (.866, .5)],
+         [(0, -1), (.866, -.5)],
+         [(.866, .5), (.866, -.5)],
+         [(-.866, .5), (-.866, -.5)]
+        ]
+    lc = mc.LineCollection(lines, colors='black', linewidths=2)
+    ax.add_collection(lc)
+    ax.margins(0.1)
+    savefig(outfile)
+
     
 def RotatingPlot(traces, outfile):
     
@@ -188,7 +201,7 @@ def ParseSpec(BeeSensitivity, Background, folder, dimensions):
         return (sample, b, g, uv, x, y)
         
 def Plotly(traces):
-    py.sign_in('heath.obrien', 'bxr8tju4kv')
+    #py.sign_in('heath.obrien', 'bxr8tju4kv')
     #data = Data(traces)
     layout = Layout(
         showlegend=True,
