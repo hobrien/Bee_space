@@ -163,13 +163,14 @@ def RotatingPlot(traces, outfile, resolution):
               handlelength=0
             )
 
-    for i in range(1, 360):
+    for i in range(1, 361):
         ax.view_init(elev=45, azim=i)
         if i < 45:
             i += 360
         savefig("scatter_%03d.png" % i, dpi=resolution)
     call(["convert", "-delay", "10", "-loop", "0", "scatter_*.png", outfile])
-    call(["rm scatter_*.png"], shell=True)
+    for i in range(45, 405):
+        os.remove("scatter_%03d.png" % i)  
 
                 
 def ParseSpec(BeeSensitivity, Background, folder, dimensions, column_headers):
