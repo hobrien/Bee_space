@@ -41,3 +41,18 @@ Installing on Windows
   - launch GitHub shell and type "git clone https://github.com/hobrien/Bee_space"
   - open Command Prompt, then type "python Desktop\GitHub\Bee_space\Test\test_ParseSpec.py"
   
+- Install [ImageMagick](www.imagemagick.org) 
+  - This requires admin access so you'll need to submit an IT request on UoB computers)
+  - Obnoxiously, the program needed has the same name as a system command, so an extra steps are necessary
+  - Launch the command prompt and type:
+        where convert > Desktop\GitHub\Bee_space\Scripts\IMconvert.cmd
+  - Open Notepad, then open the above file
+  - Delete the line that doesn't mention ImageMagick
+  - Put double quotes around the remaining line
+  - Place an @ symbol at the fron of the line (no space)
+  - place %* at the end of the line (after a space):
+        @"C:Program Files\ImageMagick-6.9.1-Q16\convert.exe" %*
+  - Save file
+  
+   
+    

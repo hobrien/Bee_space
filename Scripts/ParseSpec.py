@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 
-import sys, csv, os, warnings, getopt
+import sys, csv, os, warnings, getopt, platform
 
 import plotly.plotly as py
 from plotly.graph_objs import *
@@ -168,7 +168,11 @@ def RotatingPlot(traces, outfile, resolution):
         if i < 45:
             i += 360
         savefig("scatter_%03d.png" % i, dpi=resolution)
-    call(["convert", "-delay", "10", "-loop", "0", "scatter_*.png", outfile])
+    if platform.system() == 'Windows':
+        convert = os.path.join(os.path.split(os.path.realpath(sys.argv[0]))[0], 'IMconvert.cmd')
+        call([convert, "-delay", "10", "-loop", "0", "scatter_*.png", outfile])
+    else:
+        call(["convert", "-delay", "10", "-loop", "0", "scatter_*.png", outfile])
     for i in range(45, 405):
         os.remove("scatter_%03d.png" % i)  
 
