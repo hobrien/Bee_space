@@ -19,18 +19,22 @@ def main(argv):
     Wavelengths must be in first column. Spec readings must be in all other columns\n
     By default, sample names are read from file name. To use column headers as sample names, use the -c option
     Custom spec readings for Bee Sensitivity and Background Reflectance can be specified with
-    the -s and -b flags respectively\n"""
+    the -s and -b flags respectively\n
+    Resolution of rotating image can be changed with the -r option (default is 50). Note that
+    file size can get very large if this is increased\n.
+    """
     
     mode = ''
     outfile = ''
     dimensions = '3D'
     text = 0
     column_headers = 0
+    resolution = 50
     #There's got to be an easier way to specify these folders in a portable way, but this works
     BeeSensitivityFileName = os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'BeeSensitivity.txt')
     BackgroundFileName = os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'Background.txt')
     try:
-        opts, folders = getopt.getopt(argv[1:],"hcm:o:b:s:",["help", "columns", "mode=", "outfile=", "background'", "sensitivity="])
+        opts, folders = getopt.getopt(argv[1:],"hcm:o:b:s:r:",["help", "columns", "mode=", "outfile=", "background'", "sensitivity=", "resolution="])
     except getopt.GetoptError:
         print usage
         sys.exit(2)
@@ -48,6 +52,8 @@ def main(argv):
             BackgroundFileName = arg
         elif opt in ("-s", "--sensitivity"):
             BeeSensitivityFileName = arg
+        elif opt in ("-r", "--resolution"):
+            resolution = int(arg)
 
     BeeSensitivity = GetIntervals(pd.DataFrame.from_csv(BeeSensitivityFileName, sep='\t', index_col=False))
     assert len(BeeSensitivity.index) == 81, "Bee Sensitivity dataset only has %i rows. Are all values from 300-700 included?" % len(BeeSensitivity.index)
@@ -67,7 +73,7 @@ def main(argv):
     if mode == 'plotly':
         Plotly(traces)
     elif mode == 'rotate':
-        RotatingPlot(traces, outfile)
+        RotatingPlot(traces, outfile, resolution)
     elif mode == 'hexagon':
         Hexagon(traces, outfile)
     elif mode == 'text':
@@ -125,7 +131,7 @@ def Hexagon(traces, outfile):
     savefig(outfile)
 
     
-def RotatingPlot(traces, outfile):
+def RotatingPlot(traces, outfile, resolution):
     
     if not outfile:
         outfile = 'scatter.gif'
@@ -161,9 +167,9 @@ def RotatingPlot(traces, outfile):
         ax.view_init(elev=45, azim=i)
         if i < 45:
             i += 360
-        savefig("scatter_%03d.png" % i)
+        savefig("scatter_%03d.png" % i, dpi=resolution)
     call(["convert", "-delay", "10", "-loop", "0", "scatter_*.png", outfile])
-    #call(["rm scatter_*.png"], shell=True)
+    call(["rm scatter_*.png"], shell=True)
 
                 
 def ParseSpec(BeeSensitivity, Background, folder, dimensions, column_headers):
