@@ -29,6 +29,7 @@ class TestParseSpec(SpecDataTestCase):
       self.assertEqual(len(Output.values[np.where(Output != ExpectedOutput)]), 0)
 
   def test_GetColours(self):
+      self.SpecFile[self.SpecFile.columns[1]] = self.SpecFile[self.SpecFile.columns[1]] / 100
       Output = GetColours(self.BeeSensitivity, self.Background, GetIntervals(self.SpecFile))
       self.assertTrue(abs(Output[0] - 0.455134401483) < 0.0000000001) #U
       self.assertTrue(abs(Output[1] - 0.605944243558) < 0.0000000001) #B

@@ -81,6 +81,23 @@ def main(argv):
     else:
         sys.exit("mode %s not recognized. Use '-m plotly', '-m rotate' or '-m hexagon'" % mode)
 
+def SanitiseData(SpecData):
+    SpecData = SpecData[np.isfinite(SpecData['Wavelength'])] # Remove blank lines
+    # Convert percent data to proportions
+    for column in SpecData.columns[1:]:
+        if len(SpecData[SpecData[column] > 1]) > 0:
+            warnings.warn("Percent data supplied. Converting to proportions")
+            SpecData[column] = SpecData[column] / 100        
+    # Convert negative values to 0 and values > 1 to 1 (might be better to drop?)
+    for column in SpecData.columns[1:]:
+        if len(SpecData[SpecData[column] < 0]) > 0:
+            warnings.warn("Negative reflectance values being changed to zero")         
+        SpecData[column][SpecData[column] < 0] = 0
+        if len(SpecData[SpecData[column] > 1]) > 1:
+            warnings.warn("Reflectance values greater than one being changed to one")         
+        SpecData[column][SpecData[column] > 1] = 1        
+    return SpecData
+
 def PrintText(traces, outfile):
    if not outfile:
        outfile = 'scatter.txt'
@@ -93,6 +110,7 @@ def PrintText(traces, outfile):
                     row.append(str(column[i]))
                 file_handle.write('\t'.join(row) + '\n')
    file_handle.close()
+
 
 def Hexagon(traces, outfile):
     if not outfile:
@@ -198,7 +216,7 @@ def ParseSpec(BeeSensitivity, Background, folder, dimensions, column_headers):
     for file in files:
             SpecData = pd.DataFrame.from_csv(file, sep=None, index_col=False)
             SpecData.rename(columns={SpecData.columns[0]:'Wavelength'}, inplace=True)
-            SpecData = SpecData[np.isfinite(SpecData['Wavelength'])]
+            SpecData = SanitiseData(SpecData)
             ReducedSpec = GetIntervals(SpecData)
             assert len(ReducedSpec.index) == 81, "Spec dataset only has %i rows. Are all values from 300-700 included?" % len(ReducedSpec.index)
             for i in range(len(ReducedSpec.columns) -1):
@@ -263,7 +281,7 @@ def GetColours(BeeSensitivity, Background, SpecData):
     U_B_G_Y_X = []
     for colour in ('UV', 'Blue', 'Green'):
         R = 1/sum(Combined[colour]*Combined['Daylight']*Combined['Leaves'])
-        raw = sum(Combined[colour]*Combined['Daylight']*Combined['Reflectance']/100)
+        raw = sum(Combined[colour]*Combined['Daylight']*Combined['Reflectance'])
         U_B_G_Y_X.append(raw*R/(raw*R+1))
     U_B_G_Y_X.append(U_B_G_Y_X[1]-0.5*(U_B_G_Y_X[0]+U_B_G_Y_X[2]))
     U_B_G_Y_X.append(0.866*(U_B_G_Y_X[2]-U_B_G_Y_X[0]))
