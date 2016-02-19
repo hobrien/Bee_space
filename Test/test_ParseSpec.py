@@ -30,35 +30,35 @@ class TestParseSpec(SpecDataTestCase):
 
   def test_GetColours(self):
       Output = GetColours(self.BeeSensitivity, self.Background, GetIntervals(self.SpecFile))
-      self.assertEqual(Output[0], 0.98817009028705383)
-      self.assertEqual(Output[1], 0.99353884937423742)
-      self.assertEqual(Output[2], 0.98234026886614656)
-      self.assertEqual(Output[3], 0.008283669797637172)
-      self.assertEqual(Output[4], -0.0050486253505056923)
+      self.assertTrue(abs(Output[0] - 0.455134401483) < 0.0000000001) #U
+      self.assertTrue(abs(Output[1] - 0.605944243558) < 0.0000000001) #B
+      self.assertTrue(abs(Output[2] - 0.357433862968) < 0.0000000001)#G
+      self.assertTrue(abs(Output[3] - 0.199660111332) < 0.0000000001)#Y
+      self.assertTrue(abs(Output[4] - -0.0846086663539) < 0.0000000001)#X
 
   def test_ParseSpec_both(self):
       Output = ParseSpec(self.BeeSensitivity, self.Background, self.SpecFileName, 'both', 0)
       self.assertEqual(Output[0], ['Spec_test'])
-      self.assertEqual(Output[1], [0.99353884937423742])
-      self.assertEqual(Output[2], [0.98234026886614656])
-      self.assertEqual(Output[3], [0.98817009028705383])
-      self.assertEqual(Output[4], [0.008283669797637172])
-      self.assertEqual(Output[5], [-0.0050486253505056923])
+      self.assertTrue(abs(Output[1][0] - 0.605944243558) < 0.0000000001) #B
+      self.assertTrue(abs(Output[2][0] - 0.357433862968) < 0.0000000001) #G
+      self.assertTrue(abs(Output[3][0] - 0.455134401483) < 0.0000000001) #U
+      self.assertTrue(abs(Output[4][0] - -0.0846086663539) < 0.0000000001)#X
+      self.assertTrue(abs(Output[5][0] - 0.199660111332) < 0.0000000001)#Y
 
   def test_ParseSpec_2D(self):
       Output = ParseSpec(self.BeeSensitivity, self.Background, self.SpecFileName, '2D', 0)
       self.assertEqual(Output['name'], 'Spec_test')
       self.assertEqual(Output['mode'], 'markers')
-      self.assertEqual(Output['y'], [-0.0050486253505056923])
-      self.assertEqual(Output['x'], [0.008283669797637172])
+      self.assertTrue(abs(Output['y'][0] - 0.199660111332) < 0.0000000001)#Y
+      self.assertTrue(abs(Output['x'][0] - -0.0846086663539) < 0.0000000001)#X
 
   def test_ParseSpec_3D(self):
       Output = ParseSpec(self.BeeSensitivity, self.Background, self.SpecFileName, '3D', 0)
       self.assertEqual(Output['name'], 'Spec_test')
       self.assertEqual(Output['mode'], 'markers')
-      self.assertEqual(Output['y'], [0.98234026886614656])
-      self.assertEqual(Output['x'], [0.99353884937423742])
-      self.assertEqual(Output['z'], [0.98817009028705383])
+      self.assertTrue(abs(Output['y'][0] - 0.357433862968) < 0.0000000001) #G
+      self.assertTrue(abs(Output['z'][0] - 0.455134401483) < 0.0000000001) #U
+      self.assertTrue(abs(Output['x'][0] - 0.605944243558) < 0.0000000001) #B
 
   def test_ParseSpec_column_header(self):
       Output = ParseSpec(self.BeeSensitivity, self.Background, self.SpecFileName, '3D', 1)

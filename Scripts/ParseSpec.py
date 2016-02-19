@@ -149,9 +149,9 @@ def RotatingPlot(traces, outfile, resolution):
         ax.scatter(list(trace['z']), list(trace['y']), list(trace['x']), c=colour, marker='o')
         legend_points.append(plt.Line2D([0],[0], linestyle="none", c=colour, marker = 'o'))
         legend_titles.append(trace['name'])
-    ax.set_xlabel('UV')
+    ax.set_xlabel('Blue')
     ax.set_ylabel('Green')
-    ax.set_zlabel('Blue')
+    ax.set_zlabel('UV')
     ax.legend(legend_points, 
               legend_titles, 
               numpoints = 1, 
@@ -208,8 +208,8 @@ def ParseSpec(BeeSensitivity, Background, folder, dimensions, column_headers):
                 uv.append(Colours[0])
                 b.append(Colours[1])
                 g.append(Colours[2])
-                x.append(Colours[3])
-                y.append(Colours[4])
+                y.append(Colours[3])
+                x.append(Colours[4])
                 sample.append(sample_id)
     os.chdir(starting_dir)
     if dimensions == '3D':
@@ -263,7 +263,7 @@ def GetColours(BeeSensitivity, Background, SpecData):
     U_B_G_Y_X = []
     for colour in ('UV', 'Blue', 'Green'):
         R = 1/sum(Combined[colour]*Combined['Daylight']*Combined['Leaves'])
-        raw = sum(Combined[colour]*Combined['Daylight']*Combined['Reflectance'])
+        raw = sum(Combined[colour]*Combined['Daylight']*Combined['Reflectance']/100)
         U_B_G_Y_X.append(raw*R/(raw*R+1))
     U_B_G_Y_X.append(U_B_G_Y_X[1]-0.5*(U_B_G_Y_X[0]+U_B_G_Y_X[2]))
     U_B_G_Y_X.append(0.866*(U_B_G_Y_X[2]-U_B_G_Y_X[0]))
