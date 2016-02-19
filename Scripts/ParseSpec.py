@@ -195,8 +195,10 @@ def ParseSpec(BeeSensitivity, Background, folder, dimensions, column_headers):
                 files.append(file)
     elif os.path.isfile(folder):
         files.append(folder)            
-    for file in files:        
-            SpecData = pd.DataFrame.from_csv(file, sep='\t', index_col=False)
+    for file in files:
+            SpecData = pd.DataFrame.from_csv(file, sep=None, index_col=False)
+            SpecData.rename(columns={SpecData.columns[0]:'Wavelength'}, inplace=True)
+            SpecData = SpecData[np.isfinite(SpecData['Wavelength'])]
             ReducedSpec = GetIntervals(SpecData)
             assert len(ReducedSpec.index) == 81, "Spec dataset only has %i rows. Are all values from 300-700 included?" % len(ReducedSpec.index)
             for i in range(len(ReducedSpec.columns) -1):
@@ -269,7 +271,6 @@ def GetColours(BeeSensitivity, Background, SpecData):
     
 def GetIntervals(SpecData, Interval=5):
     #select wavelengths closest to multiples of interval and round
-    SpecData.rename(columns={SpecData.columns[0]:'Wavelength'}, inplace=True)
     SpecData= SpecData.sort(columns='Wavelength')
     LastSaved = SpecData['Wavelength'].tolist()[-1]+Interval
     for x in reversed(range(1, len(SpecData['Wavelength']))):
