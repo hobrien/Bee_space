@@ -103,7 +103,7 @@ def Hexagon(traces, outfile):
     legend_titles = []
     for trace in traces:
         colour = colours.pop(0)
-        ax.scatter(list(trace['y']), list(trace['x']), c=colour, marker='o')
+        ax.scatter(x=list(trace['x']), y=list(trace['y']), c=colour, marker='o')
         legend_points.append(plt.Line2D([0],[0], linestyle="none", c=colour, marker = 'o'))
         legend_titles.append(trace['name'])
     #ax.set_xlabel('UV')
