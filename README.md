@@ -30,9 +30,9 @@ columns rather than folders with multiple files)
 
 Testing
 -------
-```python Scripts/ParseSpec.py -m hexagon -o test.png Examples/Test1/*```
+```python Scripts/ParseSpec.py Examples/Test1/*```
 
-- Plot should show same pattern as Test/scatter.png
+- Plot (scatter.png) should show same pattern as Test/scatter.png
 
 Installing on Windows
 ---------------------
