@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 
-import sys, csv, os, warnings, getopt, platform
+import sys, csv, os, warnings, getopt, platform, argparse
 
 import plotly.plotly as py
 from plotly.graph_objs import *
@@ -14,72 +14,77 @@ from pylab import plt, savefig
 
 from subprocess import call
 
-def main(argv):
-    usage = """"ParseSpec.py -m (hexagon | plotly | rotate | text) -o outfile data_folders\n
+""""ParseSpec.py -m (hexagon | plotly | rotate | text) -o outfile data_folders\n
     Wavelengths must be in first column. Spec readings must be in all other columns\n
     By default, sample names are read from file name. To use column headers as sample names, use the -c option
     Custom spec readings for Bee Sensitivity and Background Reflectance can be specified with
     the -s and -b flags respectively\n
     Resolution of rotating image can be changed with the -r option (default is 50). Note that
     file size can get very large if this is increased\n.
-    """
+"""
+
+
+def main(args):
     
-    mode = ''
-    outfile = ''
-    dimensions = '3D'
-    text = 0
-    column_headers = 0
-    resolution = 50
-    #There's got to be an easier way to specify these folders in a portable way, but this works
-    BeeSensitivityFileName = os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'BeeSensitivity.txt')
-    BackgroundFileName = os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'Background.txt')
-    try:
-        opts, folders = getopt.getopt(argv[1:],"hcm:o:b:s:r:",["help", "columns", "mode=", "outfile=", "background'", "sensitivity=", "resolution="])
-    except getopt.GetoptError:
-        print usage
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt in ('-h', '--help'):
-            print usage
-            sys.exit()
-        elif opt in ("-c", "--columns"):
-            column_headers = 1
-        elif opt in ("-m", "--mode"):
-            mode = arg
-        elif opt in ("-o", "--outfile"):
-            outfile = arg
-        elif opt in ("-b", "--background"):
-            BackgroundFileName = arg
-        elif opt in ("-s", "--sensitivity"):
-            BeeSensitivityFileName = arg
-        elif opt in ("-r", "--resolution"):
-            resolution = int(arg)
-
-    BeeSensitivity = GetIntervals(pd.DataFrame.from_csv(BeeSensitivityFileName, sep='\t', index_col=False))
-    assert len(BeeSensitivity.index) == 81, "Bee Sensitivity dataset only has %i rows. Are all values from 300-700 included?" % len(BeeSensitivity.index)
-    Background = GetIntervals(pd.DataFrame.from_csv(BackgroundFileName, sep='\t', index_col=False))
-    assert len(Background.index) == 81, "Background dataset only has %i rows. Are all values from 300-700 included?" % len(Background.index)
-
-    if mode == 'hexagon':
-        dimensions = '2D'
-    elif mode == 'text':
-        dimensions = 'both'
     traces = []
-    for folder in folders:
-        traces.append(ParseSpec(BeeSensitivity, Background, folder, dimensions, column_headers))
+    for folder in args.infiles:
+        traces.append(ParseSpec(folder, args))
     if len(traces) == 0:
-        sys.exit(usage)
+        sys.exit("No spec data found in the input files")
 
-    if mode == 'plotly':
+    if args.mode == 'plotly':
         Plotly(traces)
-    elif mode == 'rotate':
-        RotatingPlot(traces, outfile, resolution)
-    elif mode == 'hexagon':
-        Hexagon(traces, outfile)
-    elif mode == 'text':
-        PrintText(traces, outfile)
+    elif args.mode == 'rotate':
+        RotatingPlot(traces, args.outfile)
+    elif args.mode == 'hexagon':
+        Hexagon(traces, args.outfile)
+    elif args.mode == 'text':
+        PrintText(traces, args.outfile)
     else:
-        sys.exit("mode %s not recognized. Use '-m plotly', '-m rotate' or '-m hexagon'" % mode)
+        sys.exit("mode %s not recognized. Use '-m plotly', '-m rotate', '-m hexagon' or '-m text'" % mode)
+
+def ParseSpec(folder, args):
+    starting_dir = os.getcwd()
+    b = []
+    g = []
+    uv = []
+    x = []
+    y = []
+    sample = []
+    files = []
+    sample_id = os.path.basename(folder.strip("/"))
+    sample_id = os.path.splitext(sample_id)[0]
+    if os.path.isdir(folder):
+        os.chdir(folder)
+        for file in os.listdir(os.getcwd()):
+            if '.CSV' in file or '.csv' in file or '.TXT' in file or '.txt' in file:
+                files.append(file)
+    elif os.path.isfile(folder):
+        files.append(folder)            
+    for file in files:
+            SpecData = pd.DataFrame.from_csv(file, sep=args.sep, index_col=False)
+            SpecData.rename(columns={SpecData.columns[0]:'Wavelength'}, inplace=True)
+            SpecData = SanitiseData(SpecData)
+            ReducedSpec = GetIntervals(SpecData)
+            assert len(ReducedSpec.index) == 81, "Spec dataset only has %i rows. Are all values from 300-700 included?" % len(ReducedSpec.index)
+            for i in range(len(ReducedSpec.columns) -1):
+                if args.column_headers:
+                    sample_id = ReducedSpec.columns[1+i]
+                Colours = GetColours(ReducedSpec.drop(ReducedSpec.columns[1:1+i] | ReducedSpec.columns[2+i:], 1), args)
+                uv.append(Colours[0])
+                b.append(Colours[1])
+                g.append(Colours[2])
+                y.append(Colours[3])
+                x.append(Colours[4])
+                sample.append(sample_id)
+    os.chdir(starting_dir)
+    if args.mode == 'hexagon':
+        return Scatter(x=x, y=y, mode='markers', name=sample_id)
+    elif args.mode == 'text':
+        return (sample, b, g, uv, x, y)
+    else:
+        return Scatter3d(x=b, y=g, z=uv, mode='markers', name=sample_id)
+        
 
 def SanitiseData(SpecData):
     SpecData = SpecData[np.isfinite(SpecData['Wavelength'])] # Remove blank lines
@@ -98,6 +103,37 @@ def SanitiseData(SpecData):
         SpecData[column][SpecData[column] > 1] = 1        
     return SpecData
 
+def GetIntervals(SpecData, Interval=5):
+    #select wavelengths closest to multiples of interval and round
+    SpecData= SpecData.sort(columns='Wavelength')
+    LastSaved = SpecData['Wavelength'].tolist()[-1]+Interval
+    for x in reversed(range(1, len(SpecData['Wavelength']))):
+        current_dist =  min(SpecData['Wavelength'][x] % Interval, Interval- SpecData['Wavelength'][x] % Interval)
+        next_dist =  min(SpecData['Wavelength'][x-1] % Interval, Interval- SpecData['Wavelength'][x-1] % Interval)
+        if next_dist < current_dist or LastSaved - SpecData['Wavelength'][x] < Interval/2.0:
+            SpecData=SpecData.drop(SpecData.index[x])
+        else:
+            LastSaved = SpecData['Wavelength'][x]
+            SpecData.loc[x:x,'Wavelength'] = int(Interval * round(float(SpecData['Wavelength'][x])/Interval))
+    return SpecData[(SpecData['Wavelength'] >= 300) & (SpecData['Wavelength'] <= 700)].reset_index(drop=True)
+
+def GetColours(SpecData, args):
+    #This will do most of the work of converting a spec reading into values to plot on a 3d plot or hexagon
+    BeeSensitivity = GetIntervals(pd.DataFrame.from_csv(args.BeeSensitivityFileName, sep='\t', index_col=False))
+    assert len(BeeSensitivity.index) == 81, "Bee Sensitivity dataset only has %i rows. Are all values from 300-700 included?" % len(BeeSensitivity.index)
+    Background = GetIntervals(pd.DataFrame.from_csv(args.BackgroundFileName, sep='\t', index_col=False))
+    assert len(Background.index) == 81, "Background dataset only has %i rows. Are all values from 300-700 included?" % len(Background.index)
+    SpecData.rename(columns={SpecData.columns[1]:'Reflectance'}, inplace=True)
+    Combined = pd.merge(pd.merge(BeeSensitivity, Background, on='Wavelength'), SpecData, on='Wavelength')
+    U_B_G_Y_X = []
+    for colour in ('UV', 'Blue', 'Green'):
+        R = 1/sum(Combined[colour]*Combined['Daylight']*Combined['Leaves'])
+        raw = sum(Combined[colour]*Combined['Daylight']*Combined['Reflectance'])
+        U_B_G_Y_X.append(raw*R/(raw*R+1))
+    U_B_G_Y_X.append(U_B_G_Y_X[1]-0.5*(U_B_G_Y_X[0]+U_B_G_Y_X[2]))
+    U_B_G_Y_X.append(0.866*(U_B_G_Y_X[2]-U_B_G_Y_X[0]))
+    return U_B_G_Y_X
+    
 def PrintText(traces, outfile):
    if not outfile:
        outfile = 'scatter.txt'
@@ -195,48 +231,6 @@ def RotatingPlot(traces, outfile, resolution):
         os.remove("scatter_%03d.png" % i)  
 
                 
-def ParseSpec(BeeSensitivity, Background, folder, dimensions, column_headers):
-    starting_dir = os.getcwd()
-    b = []
-    g = []
-    uv = []
-    x = []
-    y = []
-    sample = []
-    files = []
-    sample_id = os.path.basename(folder.strip("/"))
-    sample_id = os.path.splitext(sample_id)[0]
-    if os.path.isdir(folder):
-        os.chdir(folder)
-        for file in os.listdir(os.getcwd()):
-            if '.CSV' in file or '.csv' in file or '.TXT' in file or '.txt' in file:
-                files.append(file)
-    elif os.path.isfile(folder):
-        files.append(folder)            
-    for file in files:
-            SpecData = pd.DataFrame.from_csv(file, sep=None, index_col=False)
-            SpecData.rename(columns={SpecData.columns[0]:'Wavelength'}, inplace=True)
-            SpecData = SanitiseData(SpecData)
-            ReducedSpec = GetIntervals(SpecData)
-            assert len(ReducedSpec.index) == 81, "Spec dataset only has %i rows. Are all values from 300-700 included?" % len(ReducedSpec.index)
-            for i in range(len(ReducedSpec.columns) -1):
-                if column_headers:
-                    sample_id = ReducedSpec.columns[1+i]
-                Colours = GetColours(BeeSensitivity, Background, ReducedSpec.drop(ReducedSpec.columns[1:1+i] | ReducedSpec.columns[2+i:], 1))
-                uv.append(Colours[0])
-                b.append(Colours[1])
-                g.append(Colours[2])
-                y.append(Colours[3])
-                x.append(Colours[4])
-                sample.append(sample_id)
-    os.chdir(starting_dir)
-    if dimensions == '3D':
-        return Scatter3d(x=b, y=g, z=uv, mode='markers', name=sample_id)
-    elif dimensions == '2D':
-        return Scatter(x=x, y=y, mode='markers', name=sample_id)
-    else:
-        return (sample, b, g, uv, x, y)
-        
 def Plotly(traces):
     #py.sign_in('heath.obrien', 'bxr8tju4kv')
     #data = Data(traces)
@@ -274,32 +268,33 @@ def Plotly(traces):
     fig = Figure(data=traces)
     plot_url = py.plot(fig)
 
-def GetColours(BeeSensitivity, Background, SpecData):
-    #This will do most of the work of converting a spec reading into values to plot on a 3d plot or hexagon
-    SpecData.rename(columns={SpecData.columns[1]:'Reflectance'}, inplace=True)
-    Combined = pd.merge(pd.merge(BeeSensitivity, Background, on='Wavelength'), SpecData, on='Wavelength')
-    U_B_G_Y_X = []
-    for colour in ('UV', 'Blue', 'Green'):
-        R = 1/sum(Combined[colour]*Combined['Daylight']*Combined['Leaves'])
-        raw = sum(Combined[colour]*Combined['Daylight']*Combined['Reflectance'])
-        U_B_G_Y_X.append(raw*R/(raw*R+1))
-    U_B_G_Y_X.append(U_B_G_Y_X[1]-0.5*(U_B_G_Y_X[0]+U_B_G_Y_X[2]))
-    U_B_G_Y_X.append(0.866*(U_B_G_Y_X[2]-U_B_G_Y_X[0]))
-    return U_B_G_Y_X
-    
-def GetIntervals(SpecData, Interval=5):
-    #select wavelengths closest to multiples of interval and round
-    SpecData= SpecData.sort(columns='Wavelength')
-    LastSaved = SpecData['Wavelength'].tolist()[-1]+Interval
-    for x in reversed(range(1, len(SpecData['Wavelength']))):
-        current_dist =  min(SpecData['Wavelength'][x] % Interval, Interval- SpecData['Wavelength'][x] % Interval)
-        next_dist =  min(SpecData['Wavelength'][x-1] % Interval, Interval- SpecData['Wavelength'][x-1] % Interval)
-        if next_dist < current_dist or LastSaved - SpecData['Wavelength'][x] < Interval/2.0:
-            SpecData=SpecData.drop(SpecData.index[x])
-        else:
-            LastSaved = SpecData['Wavelength'][x]
-            SpecData.loc[x:x,'Wavelength'] = int(Interval * round(float(SpecData['Wavelength'][x])/Interval))
-    return SpecData[(SpecData['Wavelength'] >= 300) & (SpecData['Wavelength'] <= 700)].reset_index(drop=True)
-            
+ 
+def parse_args(input):
+#=================== BEGIN ARGUMENT PARSING  =======================
+  parser = argparse.ArgumentParser(description="Calculate bee colour perceprion from spec data and plot in 2 or 3 dimensions.\nWavelengths must be in first column. Spec readings must be in all other columns")
+  parser.add_argument('--outfile', '-o', dest='outfile', default='',
+                   help='Output file name')
+  parser.add_argument('--mode', '-m', dest='mode', default='hexagon', type=str,
+                   help='Output mode (hexagon, plotly, rotating gif, text)')
+  parser.add_argument('--background', '-b', dest='BackgroundFileName', 
+                   default=os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'Background.txt'), 
+                   type=str, help='Location of background reflectance data')  
+  parser.add_argument('--sensitivity', '-s', dest='BeeSensitivityFileName', 
+                   default=os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'BeeSensitivity.txt'), 
+                   type=str, help='Location of bee spectral sensitivity data')  
+  parser.add_argument('--resolution', '-r', dest='resolution', default=50, type=int,
+                   help='GIF resolution (DPI) for rotating plots. Note that file size can get very large if this is increased from 50')  
+  parser.add_argument('--delimiter', '-d', dest='sep', default='\t', type=str,
+                   help='column separator')
+  parser.add_argument('--column_headers', '-c', action="store_true",
+                   help='Files have header rows')  
+  parser.add_argument('--version', '-v', action='version', version='%(prog)s 1.0')
+  parser.add_argument('infiles', nargs='+')
+  args = parser.parse_args(input)
+  return args
+#=================== END ARGUMENT PARSING  =======================
+
+           
 if __name__ == "__main__":
-   main(sys.argv)
+   args = parse_args(sys.argv[1:])
+   main(args)
