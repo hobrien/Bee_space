@@ -1,12 +1,10 @@
 #!/usr/local/bin/python
 
 import sys, csv, os, warnings, getopt, platform, argparse
-
 import plotly.plotly as py
 from plotly.graph_objs import *
 import pandas as pd
 import numpy as np
-
 from matplotlib import collections  as mc
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
@@ -35,7 +33,7 @@ def main(args):
     if args.mode == 'plotly':
         Plotly(traces)
     elif args.mode == 'rotate':
-        RotatingPlot(traces, args.outfile)
+        RotatingPlot(traces, args.outfile, args.resolution)
     elif args.mode == 'hexagon':
         Hexagon(traces, args.outfile)
     elif args.mode == 'text':
@@ -270,7 +268,6 @@ def Plotly(traces):
 
  
 def parse_args(input):
-#=================== BEGIN ARGUMENT PARSING  =======================
   parser = argparse.ArgumentParser(description="Calculate bee colour perceprion from spec data and plot in 2 or 3 dimensions.\nWavelengths must be in first column. Spec readings must be in all other columns")
   parser.add_argument('--outfile', '-o', dest='outfile', default='',
                    help='Output file name')
@@ -292,7 +289,6 @@ def parse_args(input):
   parser.add_argument('infiles', nargs='+')
   args = parser.parse_args(input)
   return args
-#=================== END ARGUMENT PARSING  =======================
 
            
 if __name__ == "__main__":
