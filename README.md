@@ -28,6 +28,12 @@ Runs beespace on all '.CSV' or '.txt' files in each folder than uses the data to
 specified plot, using the folder names as sample names (can also use files with multiple
 columns rather than folders with multiple files)
 
+Testing
+-------
+```python Scripts/ParseSpec.py -m hexagon -o test.png Examples/Test1/*```
+
+- Plot should show same pattern as Test/scatter.png
+
 Installing on Windows
 ---------------------
 - Download and install the [Anaconda](http://continuum.io/downloads) package for scientific python
