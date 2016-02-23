@@ -9,7 +9,7 @@ from matplotlib import collections  as mc
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from pylab import plt, savefig
-
+from gooey import Gooey, GooeyParser
 from subprocess import call
 
 """"ParseSpec.py -m (hexagon | plotly | rotate | text) -o outfile data_folders\n
@@ -23,25 +23,24 @@ from subprocess import call
 
 
 def main(args):
+    folder = args.data_directory
     traces = []
-    for folder in args.infiles:
-        sub_folders = 0
-        single_folder = 0
-        for file in os.listdir(folder):
-            if file[0] == '.':
-                continue
-            file = os.path.join(folder, file)
-            print file
-            if os.path.isdir(file):
-                sub_folders = 1
-                traces.append(ParseSpec(file, args))
-            elif '.CSV' in file or '.csv' in file or '.TXT' in file or '.txt' in file:
-                single_folder = 1
-        if single_folder:
-            if sub_folders:
-                sys.exit("Script does not know how to handle a mix of subfolders and datafiles")
-            traces.append(ParseSpec(folder, args))
-
+    sub_folders = 0
+    single_folder = 0
+    for file in os.listdir(folder):
+        if file[0] == '.':
+            continue
+        file = os.path.join(folder, file)
+        print file
+        if os.path.isdir(file):
+            sub_folders = 1
+            traces.append(ParseSpec(file, args))
+        elif '.CSV' in file or '.csv' in file or '.TXT' in file or '.txt' in file:
+            single_folder = 1
+    if single_folder:
+        if sub_folders:
+            sys.exit("Script does not know how to handle a mix of subfolders and datafiles")
+        traces.append(ParseSpec(folder, args))
     if len(traces) == 0:
         sys.exit("No spec data found in the input files")
 
@@ -55,7 +54,7 @@ def main(args):
         PrintText(traces, args.outfile)
     else:
         sys.exit("mode %s not recognized. Use '-m plotly', '-m rotate', '-m hexagon' or '-m text'" % mode)
-      
+
 def ParseSpec(folder, args):
     print folder
     b = []
@@ -93,7 +92,7 @@ def ParseSpec(folder, args):
         return (sample, b, g, uv, x, y)
     else:
         return Scatter3d(x=b, y=g, z=uv, mode='markers', name=sample_id)
-
+        
 
 def SanitiseData(SpecData):
     SpecData = SpecData[np.isfinite(SpecData['Wavelength'])] # Remove blank lines
@@ -165,6 +164,7 @@ def Hexagon(traces, outfile):
     legend_points = []
     legend_titles = []
     for trace in traces:
+        print trace
         colour = colours.pop(0)
         ax.scatter(x=list(trace['x']), y=list(trace['y']), c=colour, marker='o')
         legend_points.append(plt.Line2D([0],[0], linestyle="none", c=colour, marker = 'o'))
@@ -277,31 +277,39 @@ def Plotly(traces):
     fig = Figure(data=traces)
     plot_url = py.plot(fig)
 
- 
-def parse_args(input):
-  parser = argparse.ArgumentParser(description="Calculate bee colour perceprion from spec data and plot in 2 or 3 dimensions.\nWavelengths must be in first column. Spec readings must be in all other columns")
-  parser.add_argument('--outfile', '-o', dest='outfile', default='',
-                   help='Output file name')
+@Gooey(program_name="Bee Space: Plotting spec data in bee colour space in 2 or 3 dimensions") 
+def parse_args():
+  parser = GooeyParser(description="Calculate bee colour perceprion from spec data and plot in 2 or 3 dimensions.\nWavelengths must be in first column. Spec readings must be in all other columns")
+  parser.add_argument('data_directory',
+                        action='store',
+                        widget='DirChooser',
+                        help="Source directory that contains spec data")
+  parser.add_argument('output_directory',
+                        action='store',
+                        widget='DirChooser',
+                        default=os.getcwd(),
+                        help="Output directory to save plot")
+  parser.add_argument('--outfile', '-o', dest='outfile', default='scatter.png', type=str,
+                   help='Name for output file')  
   parser.add_argument('--mode', '-m', dest='mode', default='hexagon', type=str,
                    help='Output mode (hexagon, plotly, rotating gif, text)')
-  parser.add_argument('--background', '-b', dest='BackgroundFileName', 
-                   default=os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'Background.txt'), 
-                   type=str, help='Location of background reflectance data')  
-  parser.add_argument('--sensitivity', '-s', dest='BeeSensitivityFileName', 
-                   default=os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'BeeSensitivity.txt'), 
-                   type=str, help='Location of bee spectral sensitivity data')  
   parser.add_argument('--resolution', '-r', dest='resolution', default=50, type=int,
                    help='GIF resolution (DPI) for rotating plots. Note that file size can get very large if this is increased from 50')  
   parser.add_argument('--delimiter', '-d', dest='sep', default='\t', type=str,
                    help='column separator')
   parser.add_argument('--column_headers', '-c', action="store_true",
                    help='Files have header rows')  
-  parser.add_argument('--version', '-v', action='version', version='%(prog)s 1.0')
-  parser.add_argument('infiles', nargs='+')
-  args = parser.parse_args(input)
+  parser.add_argument('--background', '-b', dest='BackgroundFileName', 
+                   default=os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'Background.txt'), 
+                   type=str, help='Location of background reflectance data')  
+  parser.add_argument('--sensitivity', '-s', dest='BeeSensitivityFileName', 
+                   default=os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'BeeSensitivity.txt'), 
+                   type=str, help='Location of bee spectral sensitivity data')  
+  #parser.add_argument('infiles', nargs='+')
+  args = parser.parse_args()
   return args
 
            
 if __name__ == "__main__":
-   args = parse_args(sys.argv[1:])
+   args = parse_args()
    main(args)
