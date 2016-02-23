@@ -27,6 +27,9 @@ def main(args):
     for folder in args.infiles:
         sub_folders = 0
         single_folder = 0
+        if os.path.isfile(folder):
+            traces.append(ParseSpec(folder, args))
+            continue
         for file in os.listdir(folder):
             if file[0] == '.':
                 continue
@@ -57,20 +60,24 @@ def main(args):
         sys.exit("mode %s not recognized. Use '-m plotly', '-m rotate', '-m hexagon' or '-m text'" % mode)
       
 def ParseSpec(folder, args):
-    print folder
     b = []
     g = []
     uv = []
     x = []
     y = []
     sample = []
+    files = []
     sample_id = os.path.basename(folder.strip("/"))
     sample_id = os.path.splitext(sample_id)[0]
-    for file in os.listdir(folder):
-        file = os.path.join(folder, file)
-        print file
+    if os.path.isdir(folder):
+        for file in os.listdir(folder):
+            #file = os.path.join(folder, file)
+            if '.CSV' in file or '.csv' in file or '.TXT' in file or '.txt' in file:
+                files.append(os.path.join(folder, file))
+    else:
+        files.append(folder) 
+    for file in files:
         if '.CSV' in file or '.csv' in file or '.TXT' in file or '.txt' in file:
-            print file 
             SpecData = pd.DataFrame.from_csv(file, sep=args.sep, index_col=False)
             SpecData.rename(columns={SpecData.columns[0]:'Wavelength'}, inplace=True)
             SpecData = SanitiseData(SpecData)
