@@ -24,14 +24,17 @@ from subprocess import call
 
 def main(args):
     traces = []
+    starting_dir = os.getcwd()
     for folder in args.infiles:
         sub_folders = 0
         single_folder = 0
-        for file in os.listdir(folder):
+        if os.path.isfile(folder):
+            traces.append(ParseSpec(folder, args))
+            continue
+        os.chdir(folder)
+        for file in os.listdir(os.getcwd()):
             if file[0] == '.':
                 continue
-            file = os.path.join(folder, file)
-            print file
             if os.path.isdir(file):
                 sub_folders = 1
                 traces.append(ParseSpec(file, args))
@@ -40,6 +43,8 @@ def main(args):
         if single_folder:
             if sub_folders:
                 sys.exit("Script does not know how to handle a mix of subfolders and datafiles")
+            
+            os.chdir(starting_dir)    
             traces.append(ParseSpec(folder, args))
 
     if len(traces) == 0:
@@ -64,13 +69,18 @@ def ParseSpec(folder, args):
     x = []
     y = []
     sample = []
+    files = []
     sample_id = os.path.basename(folder.strip("/"))
     sample_id = os.path.splitext(sample_id)[0]
-    for file in os.listdir(folder):
-        file = os.path.join(folder, file)
-        print file
-        if '.CSV' in file or '.csv' in file or '.TXT' in file or '.txt' in file:
-            print file 
+    starting_dir = os.getcwd()
+    if os.path.isdir(folder):
+        os.chdir(folder)
+        for file in os.listdir(os.getcwd()):
+            if '.CSV' in file or '.csv' in file or '.TXT' in file or '.txt' in file:
+                files.append(file)
+    else:
+        files.append(folder) 
+    for file in files:                    
             SpecData = pd.DataFrame.from_csv(file, sep=args.sep, index_col=False)
             SpecData.rename(columns={SpecData.columns[0]:'Wavelength'}, inplace=True)
             SpecData = SanitiseData(SpecData)
@@ -86,6 +96,7 @@ def ParseSpec(folder, args):
                 y.append(Colours[3])
                 x.append(Colours[4])
                 sample.append(sample_id)
+    os.chdir(starting_dir)
     if args.mode == 'hexagon':
         print sample_id
         return Scatter(x=x, y=y, mode='markers', name=sample_id)
