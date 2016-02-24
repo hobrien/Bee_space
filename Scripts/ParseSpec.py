@@ -103,7 +103,10 @@ def ParseSpec(folder, args):
 
 def SanitiseData(SpecData):
     #print "Sanitising data"
-    SpecData = SpecData[np.isfinite(SpecData['Wavelength'])] # Remove blank lines
+    try:
+        SpecData = SpecData[np.isfinite(SpecData['Wavelength'])] # Remove blank lines
+    except TypeError:
+        sys.exit("Columns not parsed correctly. Was the right column separator selected?")
     # Convert percent data to proportions
     for column in SpecData.columns[1:]:
         if len(SpecData[SpecData[column] > 1]) > 0:
