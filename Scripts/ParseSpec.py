@@ -34,7 +34,6 @@ def main(args):
             if file[0] == '.':
                 continue
             file = os.path.join(folder, file)
-            print file
             if os.path.isdir(file):
                 sub_folders = 1
                 traces.append(ParseSpec(file, args))
@@ -103,6 +102,7 @@ def ParseSpec(folder, args):
 
 
 def SanitiseData(SpecData):
+    #print "Sanitising data"
     SpecData = SpecData[np.isfinite(SpecData['Wavelength'])] # Remove blank lines
     # Convert percent data to proportions
     for column in SpecData.columns[1:]:
@@ -120,8 +120,9 @@ def SanitiseData(SpecData):
     return SpecData
 
 def GetIntervals(SpecData, Interval=5):
+    #print "getting intervals"
     #select wavelengths closest to multiples of interval and round
-    SpecData= SpecData.sort(columns='Wavelength')
+    SpecData= SpecData.sort_values(by='Wavelength')
     LastSaved = SpecData['Wavelength'].tolist()[-1]+Interval
     for x in reversed(range(1, len(SpecData['Wavelength']))):
         current_dist =  min(SpecData['Wavelength'][x] % Interval, Interval- SpecData['Wavelength'][x] % Interval)
@@ -134,6 +135,7 @@ def GetIntervals(SpecData, Interval=5):
     return SpecData[(SpecData['Wavelength'] >= 300) & (SpecData['Wavelength'] <= 700)].reset_index(drop=True)
 
 def GetColours(SpecData, args):
+    #print "gettting colours"
     #This will do most of the work of converting a spec reading into values to plot on a 3d plot or hexagon
     BeeSensitivity = GetIntervals(pd.DataFrame.from_csv(args.BeeSensitivityFileName, sep='\t', index_col=False))
     assert len(BeeSensitivity.index) == 81, "Bee Sensitivity dataset only has %i rows. Are all values from 300-700 included?" % len(BeeSensitivity.index)
@@ -165,6 +167,7 @@ def PrintText(traces, outfile):
 
 
 def Hexagon(traces, outfile):
+    print "making hexagon"
     if not outfile:
         outfile = 'scatter.png'
     colours = ['b', 'y', 'r', 'c', 'm', 'g']
@@ -198,6 +201,7 @@ def Hexagon(traces, outfile):
     lc = mc.LineCollection(lines, colors='black', linewidths=2)
     ax.add_collection(lc)
     ax.margins(0.1)
+    print "printing output"
     savefig(outfile)
 
     
