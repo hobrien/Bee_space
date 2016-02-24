@@ -1,16 +1,6 @@
 #!/usr/local/bin/python
-
-import sys, csv, os, warnings, getopt, platform, argparse
-import plotly.plotly as py
-from plotly.graph_objs import *
-import pandas as pd
-import numpy as np
-from matplotlib import collections  as mc
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
-from pylab import plt, savefig
-
-from subprocess import call
+import sys, os, warnings
+from pandas import DataFrame, merge
 
 """"ParseSpec.py -m (hexagon | plotly | rotate | text) -o outfile data_folders\n
     Wavelengths must be in first column. Spec readings must be in all other columns\n
@@ -59,6 +49,7 @@ def main(args):
         sys.exit("mode %s not recognized. Use '-m plotly', '-m rotate', '-m hexagon' or '-m text'" % mode)
       
 def ParseSpec(folder, args):
+    from plotly.graph_objs import Scatter, Scatter3d
     b = []
     g = []
     uv = []
@@ -77,11 +68,14 @@ def ParseSpec(folder, args):
         files.append(folder) 
     for file in files:
         if '.CSV' in file or '.csv' in file or '.TXT' in file or '.txt' in file:
-            SpecData = pd.DataFrame.from_csv(file, sep=args.sep, index_col=False)
+            SpecData = DataFrame.from_csv(file, sep=args.sep, index_col=False)
             SpecData.rename(columns={SpecData.columns[0]:'Wavelength'}, inplace=True)
             SpecData = SanitiseData(SpecData)
             ReducedSpec = GetIntervals(SpecData)
-            assert len(ReducedSpec.index) == 81, "Spec dataset only has %i rows. Are all values from 300-700 included?" % len(ReducedSpec.index)
+            try:
+                assert len(ReducedSpec.index) == 81
+            except AssertionError:
+                sys.exit("Spec dataset only has %i rows. Are all values from 300-700 included?" % len(ReducedSpec.index))    
             for i in range(len(ReducedSpec.columns) -1):
                 if args.column_headers:
                     sample_id = ReducedSpec.columns[1+i]
@@ -102,9 +96,10 @@ def ParseSpec(folder, args):
 
 
 def SanitiseData(SpecData):
+    from numpy import isfinite
     #print "Sanitising data"
     try:
-        SpecData = SpecData[np.isfinite(SpecData['Wavelength'])] # Remove blank lines
+        SpecData = SpecData[isfinite(SpecData['Wavelength'])] # Remove blank lines
     except TypeError:
         sys.exit("Columns not parsed correctly. Was the right column separator selected?")
     # Convert percent data to proportions
@@ -140,12 +135,12 @@ def GetIntervals(SpecData, Interval=5):
 def GetColours(SpecData, args):
     #print "gettting colours"
     #This will do most of the work of converting a spec reading into values to plot on a 3d plot or hexagon
-    BeeSensitivity = GetIntervals(pd.DataFrame.from_csv(args.BeeSensitivityFileName, sep='\t', index_col=False))
+    BeeSensitivity = GetIntervals(DataFrame.from_csv(args.BeeSensitivityFileName, sep='\t', index_col=False))
     assert len(BeeSensitivity.index) == 81, "Bee Sensitivity dataset only has %i rows. Are all values from 300-700 included?" % len(BeeSensitivity.index)
-    Background = GetIntervals(pd.DataFrame.from_csv(args.BackgroundFileName, sep='\t', index_col=False))
+    Background = GetIntervals(DataFrame.from_csv(args.BackgroundFileName, sep='\t', index_col=False))
     assert len(Background.index) == 81, "Background dataset only has %i rows. Are all values from 300-700 included?" % len(Background.index)
     SpecData.rename(columns={SpecData.columns[1]:'Reflectance'}, inplace=True)
-    Combined = pd.merge(pd.merge(BeeSensitivity, Background, on='Wavelength'), SpecData, on='Wavelength')
+    Combined = merge(merge(BeeSensitivity, Background, on='Wavelength'), SpecData, on='Wavelength')
     U_B_G_Y_X = []
     for colour in ('UV', 'Blue', 'Green'):
         R = 1/sum(Combined[colour]*Combined['Daylight']*Combined['Leaves'])
@@ -170,6 +165,9 @@ def PrintText(traces, outfile):
 
 
 def Hexagon(traces, outfile):
+    import matplotlib.pyplot as plt
+    from matplotlib.collections import LineCollection
+    from pylab import savefig
     #print "making hexagon"
     if not outfile:
         outfile = 'scatter.png'
@@ -201,14 +199,17 @@ def Hexagon(traces, outfile):
          [(.866, .5), (.866, -.5)],
          [(-.866, .5), (-.866, -.5)]
         ]
-    lc = mc.LineCollection(lines, colors='black', linewidths=2)
+    lc = LineCollection(lines, colors='black', linewidths=2)
     ax.add_collection(lc)
     ax.margins(0.1)
     savefig(outfile)
 
     
 def RotatingPlot(traces, outfile, resolution):
-    
+    #from mpl_toolkits.mplot3d import Axes3D
+    import matplotlib.pyplot as plt
+    from pylab import savefig
+    from subprocess import call
     if not outfile:
         outfile = 'scatter.gif'
         
@@ -254,8 +255,7 @@ def RotatingPlot(traces, outfile, resolution):
 
                 
 def Plotly(traces):
-    #py.sign_in('heath.obrien', 'bxr8tju4kv')
-    #data = Data(traces)
+    import plotly.plotly as py
     layout = Layout(
         showlegend=True,
         autosize=True,
@@ -292,6 +292,7 @@ def Plotly(traces):
 
  
 def parse_args(input):
+  import argparse
   parser = argparse.ArgumentParser(description="Calculate bee colour perception from spec data and plot in 2 or 3 dimensions.\nWavelengths must be in first column. Spec readings must be in all other columns")
   parser.add_argument('--outfile', '-o', dest='outfile', default='',
                    help='Output file name')
