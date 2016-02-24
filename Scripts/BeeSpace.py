@@ -2,7 +2,7 @@
 
 import sys, os, warnings
 from gooey import Gooey, GooeyParser
-from ParseSpec import ParseSpec, SanitiseData, GetIntervals, GetColours, PrintText, Hexagon, RotatingPlot, Plotly
+from ParseSpec import ParseSpec, PrintText, Hexagon, RotatingPlot, Plotly
 
 """"ParseSpec.py -m (hexagon | plotly | rotate | text) -o outfile data_folders\n
     Wavelengths must be in first column. Spec readings must be in all other columns\n

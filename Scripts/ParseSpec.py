@@ -68,7 +68,8 @@ def ParseSpec(folder, args):
         files.append(folder) 
     for file in files:
         if '.CSV' in file or '.csv' in file or '.TXT' in file or '.txt' in file:
-            SpecData = read_csv(file, sep=args.sep, index_col=False)
+            InspectCSV(file, args)
+            SpecData = read_csv(file, sep=args.sep, index_col=False, header=None)
             SpecData.rename(columns={SpecData.columns[0]:'Wavelength'}, inplace=True)
             SpecData = SanitiseData(SpecData)
             ReducedSpec = GetIntervals(SpecData)
@@ -94,7 +95,25 @@ def ParseSpec(folder, args):
     else:
         return Scatter3d(x=b, y=g, z=uv, mode='markers', name=sample_id)
 
-
+def InspectCSV(file, args):
+    import csv
+    with open(file, 'rb') as csvfile:
+        dialect = csv.Sniffer().sniff(csvfile.read(2048))
+        delimiter = repr(dialect.delimiter)
+        if not delimiter == args.sep:
+            if delimiter == "'\\t'" and args.sep == '\t':
+                pass
+            else:    
+                sys.exit("Error: file appears to use '%s' to delimit columns, but '%s' was specified" % (delimiter, args.sep)) 
+        csvfile.seek(0)
+        if csv.Sniffer().has_header(csvfile.read(2048)):
+            if not args.column_headers:
+                sys.exit("Error: file appears to have a header row, but the -c option was not specified")
+        else:
+            if args.column_headers:
+                sys.exit("Error: file appears not to have a header row, but the -c option was specified")
+    return True
+            
 def SanitiseData(SpecData):
     from numpy import isfinite
     #print "Sanitising data"
@@ -111,6 +130,7 @@ def SanitiseData(SpecData):
             assert SpecData[column].dtype == 'float64' or SpecData[column].dtype == 'int64'
         except AssertionError:
             sys.exit("Error: Non-numeric data in column %s" % str(SpecData.columns.get_loc(column) + 1)) 
+        # Convert percent data to proportions
         if len(SpecData[SpecData[column] > 1]) > 0:
             warnings.warn("Percent data supplied. Converting to proportions")
             SpecData[column] = SpecData[column] / 100        
