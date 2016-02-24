@@ -93,7 +93,7 @@ def ParseSpec(folder, args):
                 x.append(Colours[4])
                 sample.append(sample_id)
     if args.mode == 'hexagon':
-        print sample_id
+        #print sample_id
         return Scatter(x=x, y=y, mode='markers', name=sample_id)
     elif args.mode == 'text':
         return (sample, b, g, uv, x, y)
@@ -167,7 +167,7 @@ def PrintText(traces, outfile):
 
 
 def Hexagon(traces, outfile):
-    print "making hexagon"
+    #print "making hexagon"
     if not outfile:
         outfile = 'scatter.png'
     colours = ['b', 'y', 'r', 'c', 'm', 'g']
@@ -201,7 +201,6 @@ def Hexagon(traces, outfile):
     lc = mc.LineCollection(lines, colors='black', linewidths=2)
     ax.add_collection(lc)
     ax.margins(0.1)
-    print "printing output"
     savefig(outfile)
 
     
@@ -290,11 +289,11 @@ def Plotly(traces):
 
  
 def parse_args(input):
-  parser = argparse.ArgumentParser(description="Calculate bee colour perceprion from spec data and plot in 2 or 3 dimensions.\nWavelengths must be in first column. Spec readings must be in all other columns")
+  parser = argparse.ArgumentParser(description="Calculate bee colour perception from spec data and plot in 2 or 3 dimensions.\nWavelengths must be in first column. Spec readings must be in all other columns")
   parser.add_argument('--outfile', '-o', dest='outfile', default='',
                    help='Output file name')
-  parser.add_argument('--mode', '-m', dest='mode', default='hexagon', type=str,
-                   help='Output mode (hexagon, plotly, rotating gif, text)')
+  parser.add_argument('--mode', '-m', choices=['hexagon', 'text', 'plotly', 'rotate'], default = 'hexagon',
+                   help='Output mode (colour hexagon, text file with coordinates, plotly or rotating gif)')
   parser.add_argument('--background', '-b', dest='BackgroundFileName', 
                    default=os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'Background.txt'), 
                    type=str, help='Location of background reflectance data')  
@@ -303,13 +302,19 @@ def parse_args(input):
                    type=str, help='Location of bee spectral sensitivity data')  
   parser.add_argument('--resolution', '-r', dest='resolution', default=50, type=int,
                    help='GIF resolution (DPI) for rotating plots. Note that file size can get very large if this is increased from 50')  
-  parser.add_argument('--delimiter', '-d', dest='sep', default='\t', type=str,
-                   help='column separator')
+  parser.add_argument('--delimiter', '-d',  choices=['Tab', 'Comma', 'Space'], 
+                   default = 'Tab', dest='sep', help='column separator')
   parser.add_argument('--column_headers', '-c', action="store_true",
                    help='Files have header rows')  
   parser.add_argument('--version', '-v', action='version', version='%(prog)s 1.0')
   parser.add_argument('infiles', nargs='+')
   args = parser.parse_args(input)
+  if args.sep == 'Tab':
+      args.sep = '\t'
+  elif args.sep == 'Comma':
+      args.sep = ','
+  else:    
+      args.sep = ' ' 
   return args
 
            

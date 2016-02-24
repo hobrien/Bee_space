@@ -49,26 +49,26 @@ def main(args):
 
 @Gooey(program_name="Bee Space: Plotting spec data in bee colour space in 2 or 3 dimensions") 
 def parse_args():
-  parser = GooeyParser(description="Calculate bee colour perceprion from spec data and plot in 2 or 3 dimensions.\nWavelengths must be in first column. Spec readings must be in all other columns")
+  parser = GooeyParser(description="Calculate bee colour perception from spec data and plot in 2 or 3 dimensions.\nWavelengths must be in first column. Spec readings must be in all other columns")
   parser.add_argument('data_directory',
                         action='store',
                         widget='DirChooser',
                         help="Source directory that contains spec data")
+  parser.add_argument('--mode', '-m', choices=['hexagon', 'text', 'plotly', 'rotate'], default = 'hexagon',
+                   help='Output mode')
   parser.add_argument('output_directory',
                         action='store',
-                        widget='DirChooser',
+                        widget='FileChooser',
                         default=os.getcwd(),
                         help="Output directory to save plot")
   parser.add_argument('--outfile', '-o', dest='outfile', default='scatter.png', type=str,
                    help='Name for output file')  
-  parser.add_argument('--mode', '-m', dest='mode', default='hexagon', type=str,
-                   help='Output mode (hexagon, plotly, rotating gif, text)')
-  parser.add_argument('--resolution', '-r', dest='resolution', default=50, type=int,
-                   help='GIF resolution (DPI) for rotating plots. Note that file size can get very large if this is increased from 50')  
-  parser.add_argument('--delimiter', '-d', dest='sep', default='\t', type=str,
-                   help='column separator')
+  parser.add_argument('--delimiter', '-d',  choices=['Tab', 'Comma', 'Space'], 
+                   default = 'Tab', dest='sep', help='column separator')
   parser.add_argument('--column_headers', '-c', action="store_true",
                    help='Files have header rows')  
+  parser.add_argument('--resolution', '-r', dest='resolution', default=50, type=int,
+                   help='GIF resolution (DPI) for rotating plots.')  
   parser.add_argument('--background', '-b', dest='BackgroundFileName', 
                    default=os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'Background.txt'), 
                    type=str, help='Location of background reflectance data')  
@@ -77,6 +77,12 @@ def parse_args():
                    type=str, help='Location of bee spectral sensitivity data')  
   #parser.add_argument('infiles', nargs='+')
   args = parser.parse_args()
+  if args.sep == 'Tab':
+      args.sep = '\t'
+  elif args.sep == 'Comma':
+      args.sep = ','
+  else:    
+      args.sep = ' ' 
   return args
 
            
