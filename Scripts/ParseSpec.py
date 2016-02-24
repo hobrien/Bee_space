@@ -101,14 +101,19 @@ def SanitiseData(SpecData):
     try:
         SpecData = SpecData[isfinite(SpecData['Wavelength'])] # Remove blank lines
     except TypeError:
-        sys.exit("Columns not parsed correctly. Was the right column separator selected?")
+        if len(SpecData.columns) == 1:
+            sys.exit("Columns not parsed correctly. Was the right column separator selected?")
+        else:
+            sys.exit("Error: Non-numeric data in first column")    
     # Convert percent data to proportions
     for column in SpecData.columns[1:]:
+        try:
+            assert SpecData[column].dtype == 'float64' or SpecData[column].dtype == 'int64'
+        except AssertionError:
+            sys.exit("Error: Non-numeric data in column %s" % str(SpecData.columns.get_loc(column) + 1)) 
         if len(SpecData[SpecData[column] > 1]) > 0:
             warnings.warn("Percent data supplied. Converting to proportions")
             SpecData[column] = SpecData[column] / 100        
-    # Convert negative values to 0 and values > 1 to 1 (might be better to drop?)
-    for column in SpecData.columns[1:]:
         if len(SpecData[SpecData[column] < 0]) > 0:
             warnings.warn("Negative reflectance values being changed to zero")         
         SpecData[column][SpecData[column] < 0] = 0
