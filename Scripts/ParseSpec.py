@@ -1,6 +1,6 @@
 #!/usr/local/bin/python
 import sys, os, warnings
-from pandas import DataFrame, merge
+from pandas import merge, read_csv
 
 """"ParseSpec.py -m (hexagon | plotly | rotate | text) -o outfile data_folders\n
     Wavelengths must be in first column. Spec readings must be in all other columns\n
@@ -68,7 +68,7 @@ def ParseSpec(folder, args):
         files.append(folder) 
     for file in files:
         if '.CSV' in file or '.csv' in file or '.TXT' in file or '.txt' in file:
-            SpecData = DataFrame.from_csv(file, sep=args.sep, index_col=False)
+            SpecData = read_csv(file, sep=args.sep, index_col=False)
             SpecData.rename(columns={SpecData.columns[0]:'Wavelength'}, inplace=True)
             SpecData = SanitiseData(SpecData)
             ReducedSpec = GetIntervals(SpecData)
@@ -140,9 +140,9 @@ def GetIntervals(SpecData, Interval=5):
 def GetColours(SpecData, args):
     #print "gettting colours"
     #This will do most of the work of converting a spec reading into values to plot on a 3d plot or hexagon
-    BeeSensitivity = GetIntervals(DataFrame.from_csv(args.BeeSensitivityFileName, sep='\t', index_col=False))
+    BeeSensitivity = GetIntervals(read_csv(args.BeeSensitivityFileName, sep='\t', index_col=False))
     assert len(BeeSensitivity.index) == 81, "Bee Sensitivity dataset only has %i rows. Are all values from 300-700 included?" % len(BeeSensitivity.index)
-    Background = GetIntervals(DataFrame.from_csv(args.BackgroundFileName, sep='\t', index_col=False))
+    Background = GetIntervals(read_csv(args.BackgroundFileName, sep='\t', index_col=False))
     assert len(Background.index) == 81, "Background dataset only has %i rows. Are all values from 300-700 included?" % len(Background.index)
     SpecData.rename(columns={SpecData.columns[1]:'Reflectance'}, inplace=True)
     Combined = merge(merge(BeeSensitivity, Background, on='Wavelength'), SpecData, on='Wavelength')
