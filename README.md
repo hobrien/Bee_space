@@ -9,8 +9,10 @@ Requirements:
 ------------
 
 - [python](https://www.python.org)
-- [Anaconda](http://continuum.io/downloads) Scientific python package
+- [Anaconda Scientific python package](http://continuum.io/downloads)
 - [plotly python library](https://plot.ly/python/)
+- [wxPython](http://www.wxpython.org/)
+- [Gooey](https://github.com/chriskiehl/Gooey)
 - [ImageMagick](http://www.imagemagick.org/script/index.php)
 
 Contents
@@ -22,24 +24,38 @@ Contents
 
 Usage
 -----
-python Scripts/ParseSpec.py -m [hexagon | plotly | rotate] -o outfile data_folders
+- Open command prompt and change to BeeSpace directory:
+    - eg: ```cd Desktop\BeeSpace```
+- Type ```python Scripts\ParseSpec.py -m [hexagon | plotly | rotate] -o outfile data_folders```
 
 Runs beespace on all '.CSV' or '.txt' files in each folder than uses the data to draw the 
 specified plot, using the folder names as sample names (can also use files with multiple
 columns rather than folders with multiple files)
 
+Graphical User Interface
+------------------------
+- Open command prompt and change to BeeSpace directory:
+    - eg: ```cd Desktop\BeeSpace```
+- Type ```python Scripts\BeeSpace.py```
+- Follow instructions in window
+
 Testing
 -------
-```python Scripts/ParseSpec.py Examples/Test1/*```
+```python Scripts\ParseSpec.py Examples\Test1\*```
 
-- Plot (scatter.png) should show same pattern as Test/scatter.png
+- Plot (scatter.png) should show same pattern as Test\scatter.png
 
 Installing on Windows
 ---------------------
 - Download and install the [Anaconda](http://continuum.io/downloads) package for scientific python
 - Install plotly python library:
   - open Anaconda Command Prompt
-  - type conda install -c https://conda.binstar.org/plotly plotly
+  - type ```conda install -c https://conda.binstar.org/plotly plotly```
+- Install Graphical User Interface
+  - open Anaconda Command Prompt
+  - type ```conda install wxpython```
+  - then type ```pip install gooey```
+
   - follow [these instructions](https://plot.ly/python/getting-started/) to set up plotly API credentials
   
 - Install Via GitHub:
