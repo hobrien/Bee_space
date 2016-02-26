@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 
 import sys, os, warnings
 from gooey import Gooey, GooeyParser

@@ -1,4 +1,4 @@
-#!/usr/local/bin/python
+#!/usr/bin/env python
 import sys, os, warnings
 from pandas import merge, read_csv
 from collections import defaultdict
