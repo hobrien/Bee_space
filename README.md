@@ -48,22 +48,34 @@ Testing
 Installing on Windows
 ---------------------
 - Download and install the [Anaconda](http://continuum.io/downloads) package for scientific python
-- Install plotly python library:
-  - open Anaconda Command Prompt
-  - type ```conda install -c https://conda.binstar.org/plotly plotly```
+
 - Install Graphical User Interface
   - open Anaconda Command Prompt
   - type ```conda install wxpython```
   - then type ```pip install gooey```
 
-  - follow [these instructions](https://plot.ly/python/getting-started/) to set up plotly API credentials
+- Making Graphical version clickable
+  - open file browser, then click on "Organize" and "Folder and Search Options"
+  - click on the "View" tab, then check "Show hidden files, folders, or drives"
+  - click "OK"
+  - right-click on BeeSpace.py in the Scripts folder, then click on "Open with"
+  - select "Choose default program"
+  - click on "Browse"
+  - navigate to "C:\Users\USERNAME\AppData\Local\Continuum\Anaconda\pythonw.exe"
+  - click "open", then "OK"
+  - the program should now launch when double-clicked
   
+- Install plotly python library:
+  - open Anaconda Command Prompt
+  - type ```conda install -c https://conda.binstar.org/plotly plotly```
+  - follow [these instructions](https://plot.ly/python/getting-started/) to set up plotly API credentials
+
 - Install Via GitHub:
   - Download and install the [GitHub](https://windows.github.com/) app
   - launch GitHub shell and type "git clone https://github.com/hobrien/Bee_space"
   - open Command Prompt, then type "python Desktop\GitHub\Bee_space\Test\test_ParseSpec.py"
   
-- Install [ImageMagick](www.imagemagick.org) 
+- Install [ImageMagick](www.imagemagick.org) to create rotating GIF
   - This requires admin access so you'll need to submit an IT request on UoB computers)
   - Obnoxiously, the program needed has the same name as a system command, so an extra steps are necessary
   - Launch the command prompt and type:
