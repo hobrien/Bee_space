@@ -1,6 +1,7 @@
 #!/usr/local/bin/python
 import sys, os, warnings
 from pandas import merge, read_csv
+from collections import defaultdict
 
 """"ParseSpec.py -m (hexagon | plotly | rotate | text) -o outfile data_folders\n
     Wavelengths must be in first column. Spec readings must be in all other columns\n
@@ -13,12 +14,18 @@ from pandas import merge, read_csv
 
 
 def main(args):
-    traces = []
+    traces = {'b': defaultdict(list),
+              'g': defaultdict(list),
+              'uv': defaultdict(list),
+              'x': defaultdict(list),
+              'y': defaultdict(list)
+             }
     for folder in args.infiles:
         sub_folders = 0
         single_folder = 0
+        folder_list = []
         if os.path.isfile(folder):
-            traces.append(ParseSpec(folder, args))
+            folder_list.append(folder)
             continue
         for file in os.listdir(folder):
             if file[0] == '.':
@@ -26,16 +33,18 @@ def main(args):
             file = os.path.join(folder, file)
             if os.path.isdir(file):
                 sub_folders = 1
-                traces.append(ParseSpec(file, args))
+                folder_list.append(file)
             elif '.CSV' in file or '.csv' in file or '.TXT' in file or '.txt' in file:
                 single_folder = 1
         if single_folder:
             if sub_folders:
-                sys.exit("Script does not know how to handle a mix of subfolders and datafiles")
-            traces.append(ParseSpec(folder, args))
+                sys.exit("Error: Script does not know how to handle a mix of subfolders and datafiles")
+            folder_list.append(folder)
 
-    if len(traces) == 0:
-        sys.exit("No spec data found in the input files")
+    for folder in folder_list:
+        traces = ParseSpec(traces, folder, args)
+    if len(traces['b']) == 0:
+        sys.exit("Error: No spec data found in the input files")
 
     if args.mode == 'plotly':
         Plotly(traces)
@@ -48,14 +57,7 @@ def main(args):
     else:
         sys.exit("mode %s not recognized. Use '-m plotly', '-m rotate', '-m hexagon' or '-m text'" % mode)
       
-def ParseSpec(folder, args):
-    from plotly.graph_objs import Scatter, Scatter3d
-    b = []
-    g = []
-    uv = []
-    x = []
-    y = []
-    sample = []
+def ParseSpec(traces, folder, args):
     files = []
     sample_id = os.path.basename(folder.strip("/"))
     sample_id = os.path.splitext(sample_id)[0]
@@ -69,32 +71,25 @@ def ParseSpec(folder, args):
     for file in files:
         if '.CSV' in file or '.csv' in file or '.TXT' in file or '.txt' in file:
             InspectCSV(file, args)
-            SpecData = read_csv(file, sep=args.sep, index_col=False, header=None)
+            SpecData = read_csv(file, sep=args.sep, index_col=False)
             SpecData.rename(columns={SpecData.columns[0]:'Wavelength'}, inplace=True)
             SpecData = SanitiseData(SpecData)
             ReducedSpec = GetIntervals(SpecData)
             try:
                 assert len(ReducedSpec.index) == 81
             except AssertionError:
-                sys.exit("Spec dataset only has %i rows. Are all values from 300-700 included?" % len(ReducedSpec.index))    
+                sys.exit("Error: Spec dataset only has %i rows. Are all values from 300-700 included?" % len(ReducedSpec.index))    
             for i in range(len(ReducedSpec.columns) -1):
                 if args.column_headers:
                     sample_id = ReducedSpec.columns[1+i]
                 Colours = GetColours(ReducedSpec.drop(ReducedSpec.columns[1:1+i] | ReducedSpec.columns[2+i:], 1), args)
-                uv.append(Colours[0])
-                b.append(Colours[1])
-                g.append(Colours[2])
-                y.append(Colours[3])
-                x.append(Colours[4])
-                sample.append(sample_id)
-    if args.mode == 'hexagon':
-        #print sample_id
-        return Scatter(x=x, y=y, mode='markers', name=sample_id)
-    elif args.mode == 'text':
-        return (sample, b, g, uv, x, y)
-    else:
-        return Scatter3d(x=b, y=g, z=uv, mode='markers', name=sample_id)
-
+                traces['uv'][sample_id].append(Colours[0])
+                traces['b'][sample_id].append(Colours[1])
+                traces['g'][sample_id].append(Colours[2])
+                traces['y'][sample_id].append(Colours[3])
+                traces['x'][sample_id].append(Colours[4])
+    return traces
+    
 def InspectCSV(file, args):
     import csv
     with open(file, 'rb') as csvfile:
@@ -180,12 +175,16 @@ def PrintText(traces, outfile):
        outfile = 'scatter.txt'
    file_handle = open(outfile, 'w')
    file_handle.write("Sample\tBlue\tGreen\tUV\tX\tY\n")
-   for trace in traces:
-            for i in range(len(trace[0])):
-                row = []
-                for column in trace:
-                    row.append(str(column[i]))
-                file_handle.write('\t'.join(row) + '\n')
+   for sample_id in traces['x'].keys():
+            for i in range(len(traces['b'][sample_id])):
+                file_handle.write('\t'.join((sample_id,
+                                             str(traces['b'][sample_id][i]),
+                                             str(traces['g'][sample_id][i]),
+                                             str(traces['uv'][sample_id][i]),
+                                             str(traces['x'][sample_id][i]),
+                                             str(traces['y'][sample_id][i])
+                                           )) + '\n'
+                                  )         
    file_handle.close()
 
 
@@ -200,11 +199,11 @@ def Hexagon(traces, outfile):
     fig, ax = plt.subplots()
     legend_points = []
     legend_titles = []
-    for trace in traces:
+    for sample_id in traces['x'].keys():
         colour = colours.pop(0)
-        ax.scatter(x=list(trace['x']), y=list(trace['y']), c=colour, marker='o')
+        ax.scatter(x=list(traces['x'][sample_id]), y=list(traces['y'][sample_id]), c=colour, marker='o')
         legend_points.append(plt.Line2D([0],[0], linestyle="none", c=colour, marker = 'o'))
-        legend_titles.append(trace['name'])
+        legend_titles.append(sample_id)
     #ax.set_xlabel('UV')
     #ax.set_ylabel('Green')
     ax.legend(legend_points, 
@@ -231,10 +230,11 @@ def Hexagon(traces, outfile):
 
     
 def RotatingPlot(traces, outfile, resolution):
-    #from mpl_toolkits.mplot3d import Axes3D
+    from mpl_toolkits.mplot3d import Axes3D
     import matplotlib.pyplot as plt
     from pylab import savefig
     from subprocess import call
+    from platform import system
     if not outfile:
         outfile = 'scatter.gif'
         
@@ -246,11 +246,11 @@ def RotatingPlot(traces, outfile, resolution):
     #ax.scatter(IrRed[2], IrRed[1], IrRed[0], c='b', marker='o')
     legend_points = []
     legend_titles = []
-    for trace in traces:
+    for sample_id in traces['x'].keys():
         colour = colours.pop(0)
-        ax.scatter(list(trace['z']), list(trace['y']), list(trace['x']), c=colour, marker='o')
+        ax.scatter(list(traces['b'][sample_id]), list(traces['g'][sample_id]), list(traces['uv'][sample_id]), c=colour, marker='o')
         legend_points.append(plt.Line2D([0],[0], linestyle="none", c=colour, marker = 'o'))
-        legend_titles.append(trace['name'])
+        legend_titles.append(sample_id)
     ax.set_xlabel('Blue')
     ax.set_ylabel('Green')
     ax.set_zlabel('UV')
@@ -270,7 +270,7 @@ def RotatingPlot(traces, outfile, resolution):
         if i < 45:
             i += 360
         savefig("scatter_%03d.png" % i, dpi=resolution)
-    if platform.system() == 'Windows':
+    if system() == 'Windows':
         convert = os.path.join(os.path.split(os.path.realpath(sys.argv[0]))[0], 'IMconvert.cmd')
         call([convert, "-delay", "10", "-loop", "0", "scatter_*.png", outfile])
     else:
@@ -279,8 +279,14 @@ def RotatingPlot(traces, outfile, resolution):
         os.remove("scatter_%03d.png" % i)  
 
                 
-def Plotly(traces):
-    import plotly.plotly as py
+def Plotly(colours):
+    from plotly.plotly import plot
+    from plotly.graph_objs import Scatter3d, Layout, XAxis, YAxis, ZAxis, Scene, Figure
+    
+    traces = []
+    for sample_id in colours['x'].keys():
+        traces.append(Scatter3d(x=colours['b'][sample_id], y=colours['g'][sample_id], z=colours['uv'][sample_id], mode='markers', name=sample_id))
+
     layout = Layout(
         showlegend=True,
         autosize=True,
@@ -313,7 +319,7 @@ def Plotly(traces):
         )
     )
     fig = Figure(data=traces)
-    plot_url = py.plot(fig)
+    plot_url = plot(fig)
 
  
 def parse_args(input):
