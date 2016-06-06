@@ -75,7 +75,7 @@ Installing on Windows
   - launch GitHub shell and type "git clone https://github.com/hobrien/Bee_space"
   - open Command Prompt, then type "python Desktop\GitHub\Bee_space\Test\test_ParseSpec.py"
   
-- Install [ImageMagick](www.imagemagick.org) to create rotating GIF
+- Install [ImageMagick](http://www.imagemagick.org/script/binary-releases.php) to create rotating GIF
   - This requires admin access so you'll need to submit an IT request on UoB computers)
   - Obnoxiously, the program needed has the same name as a system command, so an extra steps are necessary
   - Launch the command prompt and type:
