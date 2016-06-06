@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys, os, warnings
+from collections import defaultdict
 from gooey import Gooey, GooeyParser
 from ParseSpec import ParseSpec, PrintText, Hexagon, RotatingPlot, Plotly
 
@@ -16,7 +17,12 @@ from ParseSpec import ParseSpec, PrintText, Hexagon, RotatingPlot, Plotly
 
 def main(args):
     folder = args.data_directory
-    traces = []
+    traces = {'b': defaultdict(list),
+              'g': defaultdict(list),
+              'uv': defaultdict(list),
+              'x': defaultdict(list),
+              'y': defaultdict(list)
+             }
     sub_folders = 0
     single_folder = 0
     for file in os.listdir(folder):
@@ -26,13 +32,13 @@ def main(args):
         print file
         if os.path.isdir(file):
             sub_folders = 1
-            traces.append(ParseSpec(file, args))
+            traces = (ParseSpec(traces, file, args))
         elif '.CSV' in file or '.csv' in file or '.TXT' in file or '.txt' in file:
             single_folder = 1
     if single_folder:
         if sub_folders:
             sys.exit("Script does not know how to handle a mix of subfolders and datafiles")
-        traces.append(ParseSpec(folder, args))
+        traces = (ParseSpec(traces, folder, args))
     if len(traces) == 0:
         sys.exit("No spec data found in the input files")
 
