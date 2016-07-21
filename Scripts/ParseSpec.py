@@ -51,7 +51,7 @@ def main(args):
     elif args.mode == 'rotate':
         RotatingPlot(traces, args.outfile, args.resolution)
     elif args.mode == 'hexagon':
-        Hexagon(traces, args.outfile)
+        Hexagon(traces, args.outfile, resolution)
     elif args.mode == 'text':
         PrintText(traces, args.outfile)
     else:
@@ -188,7 +188,7 @@ def PrintText(traces, outfile):
    file_handle.close()
 
 
-def Hexagon(traces, outfile):
+def Hexagon(traces, outfile, resolution):
     import matplotlib.pyplot as plt
     from matplotlib.collections import LineCollection
     from pylab import savefig
