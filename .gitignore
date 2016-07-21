@@ -1,0 +1,6 @@
+# output files
+*.png
+*.gif
+
+# compiled bytecode
+*.pyc
