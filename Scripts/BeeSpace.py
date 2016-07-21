@@ -73,8 +73,8 @@ def parse_args():
                    default = 'Tab', dest='sep', help='column separator')
   parser.add_argument('--column_headers', '-c', action="store_true",
                    help='Files have header rows')  
-  parser.add_argument('--resolution', '-r', dest='resolution', default=50, type=int,
-                   help='GIF resolution (DPI) for rotating plots.')  
+  parser.add_argument('--resolution', '-r', dest='resolution', default=300, type=int,
+                   help='resolution (DPI) for rotating plots (reduce for GIF, eg 50)')  
   parser.add_argument('--background', '-b', dest='BackgroundFileName', 
                    default=os.path.join(os.path.split(os.path.split(os.path.realpath(sys.argv[0]))[0])[0],'Data', 'Background.txt'), 
                    type=str, help='Location of background reflectance data')  

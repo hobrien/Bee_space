@@ -226,7 +226,7 @@ def Hexagon(traces, outfile):
     lc = LineCollection(lines, colors='black', linewidths=2)
     ax.add_collection(lc)
     ax.margins(0.1)
-    savefig(outfile)
+    savefig(outfile, dpi=resolution)
 
     
 def RotatingPlot(traces, outfile, resolution):
