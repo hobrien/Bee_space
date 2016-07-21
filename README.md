@@ -34,9 +34,9 @@ columns rather than folders with multiple files)
 
 Graphical User Interface
 ------------------------
-- Open command prompt and change to BeeSpace directory:
+- Open command prompt Using Elevated User Rights and change to BeeSpace directory:
     - eg: ```cd Desktop\BeeSpace```
-- Type ```python Scripts\BeeSpace.py```
+- Type ```python Scripts\BeeSpace.py``` (for mac, you need ```python.app Scripts/Beespace.py```)
 - Follow instructions in window
 
 Testing
@@ -54,7 +54,7 @@ Installing on Windows
   - type ```conda install wxpython```
   - then type ```pip install gooey```
 
-- Making Graphical version clickable
+- Making Graphical version clickable (this doesn't work because of write permissions for the output file)
   - open file browser, then click on "Organize" and "Folder and Search Options"
   - click on the "View" tab, then check "Show hidden files, folders, or drives"
   - click "OK"
@@ -76,7 +76,7 @@ Installing on Windows
   - open Command Prompt, then type "python Desktop\GitHub\Bee_space\Test\test_ParseSpec.py"
   
 - Install [ImageMagick](http://www.imagemagick.org/script/binary-releases.php) to create rotating GIF
-  - This requires admin access so you'll need to submit an IT request on UoB computers)
+  - This isn't working on the UoB managed PCs
   - Obnoxiously, the program needed has the same name as a system command, so an extra steps are necessary
   - Launch the command prompt and type:
   ```
