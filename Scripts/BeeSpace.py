@@ -47,7 +47,7 @@ def main(args):
     elif args.mode == 'rotate':
         RotatingPlot(traces, args.outfile, args.resolution)
     elif args.mode == 'hexagon':
-        Hexagon(traces, args.outfile, resolution)
+        Hexagon(traces, args.outfile, args.resolution)
     elif args.mode == 'text':
         PrintText(traces, args.outfile)
     else:
