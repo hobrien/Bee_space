@@ -208,6 +208,8 @@ def Hexagon(traces, outfile, resolution):
     fig, ax = plt.subplots()
     legend_points = []
     legend_titles = []
+    if len(traces['x'].keys()) > len(colours):
+        sys.exit("only %i different sample IDs can be plotted" % len(colours))
     for sample_id in traces['x'].keys():
         colour = colours.pop(0)
         ax.scatter(x=list(traces['x'][sample_id]), y=list(traces['y'][sample_id]), c=colour, marker='o')
