@@ -58,6 +58,7 @@ def main(args):
         sys.exit("mode %s not recognized. Use '-m plotly', '-m rotate', '-m hexagon' or '-m text'" % mode)
       
 def ParseSpec(traces, folder, args):
+    duplicate_names = 0 # flag if duplicate names are identified. Just used to issue a warning
     files = []
     sample_id = os.path.basename(folder.strip("/"))
     sample_id = os.path.splitext(sample_id)[0]
@@ -82,12 +83,20 @@ def ParseSpec(traces, folder, args):
             for i in range(len(ReducedSpec.columns) -1):
                 if args.column_headers:
                     sample_id = ReducedSpec.columns[1+i]
+                    try:
+                        int(sample_id.split('.')[-1]) # this is just to test if the sample ID ends in '.#', which is added by panda when there are duplicate names
+                        duplicate_names = 1
+                        sample_id='.'.join(sample_id.split('.')[0:-1]) #remove last period and following characters
+                    except ValueError:
+                        pass    
                 Colours = GetColours(ReducedSpec.drop(ReducedSpec.columns[1:1+i] | ReducedSpec.columns[2+i:], 1), args)
                 traces['uv'][sample_id].append(Colours[0])
                 traces['b'][sample_id].append(Colours[1])
                 traces['g'][sample_id].append(Colours[2])
                 traces['y'][sample_id].append(Colours[3])
                 traces['x'][sample_id].append(Colours[4])
+    if duplicate_names:
+        warnings.warn("Duplicate columns detected. Version numbers ('.1', '.2', etc) removed from the end of sample names.")
     return traces
     
 def InspectCSV(file, args):
