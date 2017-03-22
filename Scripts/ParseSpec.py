@@ -210,7 +210,7 @@ def Hexagon(traces, outfile, resolution):
     legend_titles = []
     if len(traces['x'].keys()) > len(colours):
         sys.exit("only %i different sample IDs can be plotted" % len(colours))
-    for sample_id in traces['x'].keys():
+    for sample_id in sorted(traces['x'].iterkeys()):
         colour = colours.pop(0)
         ax.scatter(x=list(traces['x'][sample_id]), y=list(traces['y'][sample_id]), c=colour, marker='o')
         legend_points.append(plt.Line2D([0],[0], linestyle="none", c=colour, marker = 'o'))
