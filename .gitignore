@@ -2,5 +2,7 @@
 *.png
 *.gif
 
+# additional files for testing
+Other/*
 # compiled bytecode
 *.pyc
