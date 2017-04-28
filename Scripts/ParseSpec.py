@@ -104,11 +104,8 @@ def InspectCSV(file, args):
     with open(file, 'rb') as csvfile:
         dialect = csv.Sniffer().sniff(csvfile.read(2048))
         delimiter = repr(dialect.delimiter)
-        if not delimiter == args.sep:
-            if delimiter == "'\\t'" and args.sep == '\t':
-                pass
-            else:    
-                sys.exit("Error: file appears to use '%s' to delimit columns, but '%s' was specified" % (delimiter, args.sep)) 
+        if not delimiter == "'{}'".format(args.sep):
+            sys.exit("Error: file appears to use '%s' to delimit columns, but '%s' was specified" % (delimiter, args.sep)) 
         csvfile.seek(0)
         if csv.Sniffer().has_header(csvfile.read(2048)):
             if not args.column_headers:
