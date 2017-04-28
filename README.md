@@ -1,5 +1,5 @@
 # Bee Space
-Scripts to plot spec data in bee colour space
+Scripts to plot spec data in bee colour space. See http://link.springer.com/article/10.1007%2FBF00199331
 
 * Data can be plotted in a colour hexagon or as a 3D scatter plot
 * 3D scatter plot can either interactive plotly plot that can be embedded in websites
